@@ -1,0 +1,243 @@
+# Arrow API
+
+Arrow Markets has an API for interacting with its contract suite. This is due to the fact that we compute an option's price off-chain and therefore must pass it securely as a part of the transaction parameters. The transaction must be submitted by the deployer of the contracts.
+
+There is a `constants.ts` file in the repository that contains useful variables and objects such as the API URL and the router contract. For reference, the scripts contained within the `./examples` folder make use of that file.
+
+## API URLs
+
+The API can be accessed via `https://fuji-api.arrow.markets/v1/<ENDPOINT>`\
+The Fuji test network can be accessed via `https://api.avax-test.network/ext/bc/C/rpc`
+
+## Endpoints
+
+Estimate Option Price: `/estimate-option-price`\
+`POST` request\
+\
+Inputs:
+```
+Body: {
+    "ticker", // String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+    "expiration", // Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+    "strike", // Price at which contract becomes active at expiration.
+    "contract_type", // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+    "quantity", // Number of contracts desired in the order.
+    "price_history" // Price history of underlying asset in an array. We recommend requesting this data from https://api.coingecko.com/api/v3/coins/{crypto_id}/market_chart?vs_currency=usd&days=84.
+}
+```
+Outputs:
+```
+{
+    "option_price" // Current price of the option contract given the data from the "price_history" input.
+}
+```
+\
+Get Recommended Option: `/get-recommended-strike`\
+Note: This currently only works with the speculation workflow. Hedging workflow is coming soon.\
+`GET` request\
+\
+Inputs:
+```
+Params: {
+    "ticker", // String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+    "expiration", // Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+    "forecast" // Forecasted price of the underlying asset (e.g. we might expect AVAX to reach $115, so we would pass 115)
+}
+```
+Outputs:
+```
+{
+    "contract_type", // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+    "greeks": {
+        "delta", // How sensitive the price of this option is to changes in the price of the underlying.
+        "gamma", // How sensitive the price of this option is to reduction in the time to expiration on the scale of days.
+        "theta" // A measure of the sensitivity of the option's delta wrt changes in the underlying price.
+    },
+    "option_price", // Current price of the option contract.
+    "strike" // Price at which contract becomes active at expiration.
+}
+```
+\
+Submit Order: `/submit-order`\
+`POST` request
+```
+Body: {
+    "buy_flag", // Boolean to indicate whether this is a buy (true) or sell (false).
+    "ticker", // String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+    "expiration", // Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+    "strike", // Price at which contract becomes active at expiration.
+    "contract_type", // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+    "quantity", // Number of contracts desired in the order.
+    "threshold_price", // Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+    "hashed_params", // Stringified hash of parameters.
+    "signature" // User's signature of the hashed parameters.
+}
+```
+Note: For ease of use, we may update the `threshold_price` parameter to ask for a javascript number instead of a parsed ethers BigNumber.\
+\
+Outputs:
+```
+{
+    "tx_hash", // Hash of the transaction that was submitted upon successful API request.
+    "execution_price" // Price that the user was charged per option contract in the order.
+}
+```
+
+# Arrow Contracts
+
+There are several smart contracts that comprise the Arrow Markets smart contract suite, however, due to the architecture of the deployment, only a few are necessary for developing composable products and features.
+
+The important contracts are the ArrowRouter, ArrowRegistry, and ArrowEvents contracts.
+
+## Arrow Event Specifications
+
+Developers may find it useful to access logs from the Arrow Events contract. Standard events filters from `web3.py`, `web3.js` and `ethers.js` can be used.
+
+The most relevant events are likely the `NewLiabilityCreation` and `NewLiabilityDestruction` events. The rest of the events can be found in the `IArrowEvents.json` ABI file.
+
+The NewLiabilityCreation and NewLiabilityDestruction events look as follows:
+```
+{
+    "ownerAddress": address, // Indexed address of the owner of the new liability
+    "optionAddress": address, // Indexed address of the on-chain option contract
+    "hashedTicker": string, // Indexed string to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+    "ticker": string // String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+    "expiration": uint256, // Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
+    "readableExpiration": uint256, // Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+    "decimalStrike": string, // String version of the strike that includes the decimal places (e.g. "12.25").
+    "contractType": uint256, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+    "quantity": uint256, // Number of contracts desired in the order.
+    "optionPrice": uint256 // Price paid or received for each of the option contracts.
+}
+```
+
+# Examples
+
+## Getting Stablecoin Contract From Router Contract
+
+The code below is an example of how to access contract addresses through the Arrow router contract. The code is available in `./examples/get-stablecoin-contract.ts` as well.
+
+```javascript
+import arrowsdk from '../arrow-sdk'
+import { ethers } from 'ethers'
+import { IArrowRouter, IERC20Metadata } from '../abis'
+
+const router = new ethers.Contract(
+    arrowsdk.addresses.router,
+    IArrowRouter,
+    arrowsdk.provider
+)
+
+async function main() {
+    const stablecoin = new ethers.Contract(
+        await router.getStablecoinAddress(),
+        IERC20Metadata,
+        arrowsdk.provider
+    )
+}
+main()
+```
+
+## Submitting Option Order Through API
+
+The code below is used to place an order on the Arrow platform. There are several steps outlined for this. For the full script, please refer to `./examples/place-option-order.ts`\
+\
+Step 1: Hash the option parameters and have the user sign the hash.
+
+```javascript
+// Hash and sign the option order parameters for on-chain verification
+const hashedValues = ethers.utils.solidityKeccak256(
+    [
+        'bool', // buy_flag - Boolean to indicate whether this is a buy (true) or sell (false).
+        'string', // ticker - String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+        'uint256', // expiration - Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
+        'uint256', // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+        'uint256', // strike - Ethers BigNumber version of the strike in terms of the stablecoin's decimals (e.g. ethers.utils.parseUnits(strike, await usdc_e.decimals())).
+        'string', // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
+        'uint256', // contract_type - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+        'uint256', // quantity - Number of contracts desired in the order.
+        'uint256' // threshold_price - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+    ],
+    [
+        buyFlag,
+        option.ticker,
+        option.expiration,
+        readableExpiration,
+        ethers.utils.parseUnits(option.decimalStrike, decimals), // option.decimalStrike * 10**stablecoinDecimals
+        option.decimalStrike,
+        option.contractType,
+        option.quantity,
+        thresholdPrice
+    ]
+)
+const signature = await wallet.signMessage(ethers.utils.arrayify(hashedValues)) // Note that we are signing a message, not a transaction
+```
+Step 2: Approval to option chain proxy.
+
+Because we deal in ERC20s, we require a user to allow the option chain contract to spend their stablecoin with an `approve()` function call. This must be done before submitting the request to the API to ensure that the transaction will succeed. Since the option chain proxy may not have been deployed yet, we must use `CREATE2` to compute the address for the option chain contract as follows:
+```javascript
+// Get chain factory contract address from router
+const chainFactoryAddress = await contracts.router.getChainFactoryAddress()
+// Build salt for CREATE2
+const salt = ethers.utils.solidityKeccak256(
+    ['address', 'string', 'uint256'],
+    [chainFactoryAddress, option.ticker, readableExpiration]
+)
+// Get bytecode hash from ArrowOptionChainProxy
+const bytecodeHash = ethers.utils.solidityKeccak256(
+    ['bytes'],
+    [ArrowOptionChainProxy.bytecode]
+)
+// Compute option chain proxy address using CREATE2
+const optionChainAddress = ethers.utils.getCreate2Address(
+    chainFactoryAddress,
+    salt,
+    bytecodeHash
+)
+// Approval circuit if the order is a "buy" order
+if (buyFlag) {
+    // Get user's balance of stablecoin
+    const userBalance = await stablecoin.balanceOf(wallet.address)
+    // Calculate amount to approve for this order (total = thresholdPrice * quantity)
+    const amountToApprove = ethers.BigNumber.from(thresholdPrice).mul(option.quantity)
+
+    // If user's balance is less than the amount required for the approval, throw an error
+    if (userBalance.lt(amountToApprove)) {
+        throw new Error('You do not have enough stablecoin to pay for your indicated threshold price.')
+    }
+
+    // Get the amount that the option chain proxy is currently approved to spend
+    let approvedAmount = await stablecoin.allowance(wallet.address, optionChainAddress)
+    // If the approved amount is less than the amount required to be approved, ask user to approve the proper amount
+    if (approvedAmount.lt(amountToApprove)) {
+        // Wait for the approval to be confirmed on-chain
+        await (await stablecoin.approve(optionChainAddress, amountToApprove)).wait(numBlockConfirmations)
+
+        // Get the amount that the option chain proxy is approved to spend now
+        approvedAmount = await stablecoin.allowance(wallet.address, optionChainAddress)
+        // If the newly approved amount is still less than the amount required to be approved, throw and error
+        if (approvedAmount.lt(amountToApprove)) {
+            throw new Error('Approval to option chain failed.')
+        }
+    }
+}
+```
+Step 3: Submit option order request to API.
+
+The `tx_hash` and `execution_price` parameters will be populated if the API call is successful. In the case where the API call is unsuccessful, more details are provided by the response from axios.
+```javascript
+// Submit option order through API
+const {
+    data: { tx_hash, execution_price }
+} = await axios.post(urls.api + '/submit-order', {
+    buy_flag: buyFlag,
+    ticker: option.ticker,
+    expiration: readableExpiration,
+    strike: option.decimalStrike,
+    contract_type: option.contractType,
+    quantity: option.quantity,
+    threshold_price: thresholdPrice.toString(),
+    hashed_params: hashedValues,
+    signature: signature
+})
+```

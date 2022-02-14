@@ -1,0 +1,23 @@
+{
+  "name": "arrow-sdk",
+  "version": "1.0.0",
+  "description": "Arrow Markets has an API for interacting with its contract suite. This is due to the fact that we compute an option's price off-chain and therefore must pass it securely as a part of the transaction parameters. The transaction must be submitted by the deployer of the contracts.",
+  "main": "",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Subharmonic Technologies, Inc.",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "@types/node": "17.0.17",
+    "axios": "0.24.0",
+    "dotenv": "10.0.0",
+    "ethers": "5.5.2",
+    "moment": "2.29.1",
+    "ts-node": "10.5.0",
+    "typescript": "4.5.4"
+  }
+}
