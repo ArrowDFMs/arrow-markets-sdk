@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { ethers } from 'ethers'
 import moment from 'moment'
 
@@ -11,6 +12,32 @@ import {
 import {
     ArrowOptionChainProxy
 } from './build'
+
+const UNSUPPORTED_VERSION_ERROR = new Error("Please select a supported contract version (v2 or v3)")
+
+export interface Option {
+    ticker: string;
+    expiration: string | number;
+    strike: number | number[];
+    contractType: number;
+    quantity: number;
+    priceHistory?: number[];
+}
+
+export interface OptionOrderParams extends Option {
+    buyFlag: boolean;
+    thresholdPrice: number;
+}
+
+export interface DeliverOptionParams extends OptionOrderParams {
+    hashedValues: string;
+    signature: string;
+    amountToApprove: ethers.BigNumber;
+    unixExpiration: number;
+    formattedStrike: string;
+    bigNumberStrike: ethers.BigNumber;
+    bigNumberThresholdPrice: ethers.BigNumber;
+}
 
 export const urls = {
     api: {
@@ -46,6 +73,46 @@ export const bytecodeHashes = {
             [ArrowOptionChainProxy.v3.bytecode]
         )
     }
+}
+
+export async function estimateOptionPrice(option: Option, version='v2') {
+    let strike = undefined
+    if (version === 'v2') {
+        strike = option.strike
+    } else if (version === 'v3') {
+        strike = (option.strike as number[]).join('|')
+    } else {
+        throw UNSUPPORTED_VERSION_ERROR
+    }
+
+    const estimatedOptionPriceReponse = await axios.post(urls.api[version] + '/estimate-option-price', {
+        "ticker": option.ticker,
+        "expiration": option.expiration, // API only takes in readable expirations so it can manually set the expiration at 9:00 PM UTC
+        "strike": strike,
+        "contract_type": option.contractType,
+        "quantity": option.quantity,
+        "price_history": option.priceHistory!
+    })
+    const estimatedOptionPrice = parseFloat(estimatedOptionPriceReponse.data.option_price.toFixed(6))
+    return estimatedOptionPrice
+}
+
+export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams, version='v2') {
+    // Submit option order through API
+    const {
+        data: { tx_hash, execution_price }
+    } = await axios.post(urls.api[version] + '/submit-order', {
+        buy_flag: deliverOptionParams.buyFlag,
+        ticker: deliverOptionParams.ticker,
+        expiration: deliverOptionParams.expiration,
+        strike: deliverOptionParams.formattedStrike,
+        contract_type: deliverOptionParams.contractType,
+        quantity: deliverOptionParams.quantity,
+        threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+        hashed_params: deliverOptionParams.hashedValues,
+        signature: deliverOptionParams.signature
+    })
+    return [tx_hash, execution_price]
 }
 
 export function getRouterContract(
@@ -105,7 +172,7 @@ export async function computeOptionChainAddress(ticker, readableExpiration, vers
     } else if (version === 'v3' || version === 'competition') {
         optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
     } else {
-        throw new Error("Please select a supported contract version (v2 or v3)")
+        throw UNSUPPORTED_VERSION_ERROR
     }
 
     // Build salt for CREATE2
@@ -124,7 +191,7 @@ export async function computeOptionChainAddress(ticker, readableExpiration, vers
     return optionChainAddress
 }
 
-export async function prepareDeliverOptionParams(optionOrderParams, wallet, version='v2') {
+export async function prepareDeliverOptionParams(optionOrderParams: OptionOrderParams, wallet, version='v2'): Promise<DeliverOptionParams> {
     // Get stablecoin decimals
     const stablecoinDecimals = await (await getStablecoinContract(wallet, version)).decimals()
 
@@ -143,10 +210,10 @@ export async function prepareDeliverOptionParams(optionOrderParams, wallet, vers
             ethers.utils.parseUnits(optionOrderParams.strike[0].toString(), stablecoinDecimals),
             ethers.utils.parseUnits(optionOrderParams.strike[1].toString(), stablecoinDecimals)
         ]
-        formattedStrike = optionOrderParams.strike.join('|')
+        formattedStrike = (optionOrderParams.strike as number[]).join('|')
         strikeType = 'uint256[2]'
     } else {
-        throw new Error("Please select a supported contract version (v2 or v3)")
+        throw UNSUPPORTED_VERSION_ERROR
     }
 
     // Hash and sign the option order parameters for on-chain verification
@@ -208,15 +275,21 @@ export async function settleOptions(wallet, owner, ticker, expiration, version='
             throw new Error("Settlement call would fail on chain")
         }
     } else {
-        throw new Error("Please select a supported contract version (v2 or v3)")
+        throw UNSUPPORTED_VERSION_ERROR
     }
 }
 
 const arrowsdk = {
+    // Variables
     urls,
     providers,
     addresses,
 
+    // API functions
+    estimateOptionPrice,
+    submitOptionOrder,
+
+    // Blockchain functions
     getRouterContract,
     getStablecoinContract,
     getEventsContract,

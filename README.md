@@ -2,7 +2,7 @@
 
 Arrow Markets has an API for interacting with its contract suite. This is due to the fact that we compute an option's price off-chain and therefore must pass it securely as a part of the transaction parameters. The transaction must be submitted by the deployer of the contracts.
 
-There is a `constants.ts` file in the repository that contains useful variables and objects such as the API URL and the router contract. For reference, the scripts contained within the `./examples` folder make use of that file.
+There is an `arrow-sdk.ts` file in the repository that contains useful variables, objects, and functions, such as the API URL and the router contract. For reference, the scripts contained within the `./examples` folder make use of that file.
 
 ## API URLs
 
@@ -93,7 +93,7 @@ The important contracts are the ArrowRouter, ArrowRegistry, and ArrowEvents cont
 
 Developers may find it useful to access logs from the Arrow Events contract. Standard events filters from `web3.py`, `web3.js` and `ethers.js` can be used.
 
-The most relevant events are likely the `NewLiabilityCreation` and `NewLiabilityDestruction` events. The rest of the events can be found in the `IArrowEvents.json` ABI file.
+The most relevant events are likely the `NewLiabilityCreation` and `NewLiabilityDestruction` events. The rest of the events can be found in the `IArrowEvents.json` ABI files.
 
 The NewLiabilityCreation and NewLiabilityDestruction events look as follows:
 ```
@@ -119,21 +119,10 @@ The code below is an example of how to access contract addresses through the Arr
 
 ```javascript
 import arrowsdk from '../arrow-sdk'
-import { ethers } from 'ethers'
-import { IArrowRouter, IERC20Metadata } from '../abis'
-
-const router = new ethers.Contract(
-    arrowsdk.addresses.router,
-    IArrowRouter,
-    arrowsdk.provider
-)
 
 async function main() {
-    const stablecoin = new ethers.Contract(
-        await router.getStablecoinAddress(),
-        IERC20Metadata,
-        arrowsdk.provider
-    )
+    const version = 'v3'
+    const stablecoin = await arrowsdk.getStablecoinContract(arrowsdk.providers.fuji, version)
 }
 main()
 ```
@@ -142,8 +131,13 @@ main()
 
 The code below is used to place an order on the Arrow platform. There are several steps outlined for this. For the full script, please refer to `./examples/place-option-order.ts`\
 \
-Step 1: Hash the option parameters and have the user sign the hash.
+Step 1: Prepare the `deliverOption()` function call parameters. This includes hashing the option parameters and having the user sign the hash.
 
+```javascript
+const deliverOptionParams: DeliverOptionParams = await prepareDeliverOptionParams(optionOrderParams, wallet, version)
+```
+
+Inside `prepareDeliverOptionParams()` we can see how the hash and signature are produced
 ```javascript
 // Hash and sign the option order parameters for on-chain verification
 const hashedValues = ethers.utils.solidityKeccak256(
@@ -152,7 +146,7 @@ const hashedValues = ethers.utils.solidityKeccak256(
         'string', // ticker - String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
         'uint256', // expiration - Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
         'uint256', // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
-        'uint256', // strike - Ethers BigNumber version of the strike in terms of the stablecoin's decimals (e.g. ethers.utils.parseUnits(strike, await usdc_e.decimals())).
+        'uint256' or 'uint256[2]', // strike - Ethers BigNumber version of the strike in terms of the stablecoin's decimals (e.g. ethers.utils.parseUnits(strike, await usdc_e.decimals())).
         'string', // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
         'uint256', // contract_type - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
         'uint256', // quantity - Number of contracts desired in the order.
@@ -172,28 +166,14 @@ const hashedValues = ethers.utils.solidityKeccak256(
 )
 const signature = await wallet.signMessage(ethers.utils.arrayify(hashedValues)) // Note that we are signing a message, not a transaction
 ```
+
 Step 2: Approval to option chain proxy.
 
 Because we deal in ERC20s, we require a user to allow the option chain contract to spend their stablecoin with an `approve()` function call. This must be done before submitting the request to the API to ensure that the transaction will succeed. Since the option chain proxy may not have been deployed yet, we must use `CREATE2` to compute the address for the option chain contract as follows:
 ```javascript
-// Get chain factory contract address from router
-const chainFactoryAddress = await contracts.router.getChainFactoryAddress()
-// Build salt for CREATE2
-const salt = ethers.utils.solidityKeccak256(
-    ['address', 'string', 'uint256'],
-    [chainFactoryAddress, option.ticker, readableExpiration]
-)
-// Get bytecode hash from ArrowOptionChainProxy
-const bytecodeHash = ethers.utils.solidityKeccak256(
-    ['bytes'],
-    [ArrowOptionChainProxy.bytecode]
-)
-// Compute option chain proxy address using CREATE2
-const optionChainAddress = ethers.utils.getCreate2Address(
-    chainFactoryAddress,
-    salt,
-    bytecodeHash
-)
+// Get computed option chain address
+const optionChainAddress = await computeOptionChainAddress(option.ticker, option.expiration, version)
+
 // Approval circuit if the order is a "buy" order
 if (buyFlag) {
     // Get user's balance of stablecoin
@@ -224,20 +204,12 @@ if (buyFlag) {
 ```
 Step 3: Submit option order request to API.
 
-The `tx_hash` and `execution_price` parameters will be populated if the API call is successful. In the case where the API call is unsuccessful, more details are provided by the response from axios.
+The `tx_hash` and `execution_price` parameters will be populated if the API call is successful. In the case where the API call is unsuccessful, more details are provided by the response from axios, so make sure you use a try-catch block.
 ```javascript
-// Submit option order through API
-const {
-    data: { tx_hash, execution_price }
-} = await axios.post(urls.api + '/submit-order', {
-    buy_flag: buyFlag,
-    ticker: option.ticker,
-    expiration: readableExpiration,
-    strike: option.decimalStrike,
-    contract_type: option.contractType,
-    quantity: option.quantity,
-    threshold_price: thresholdPrice.toString(),
-    hashed_params: hashedValues,
-    signature: signature
-})
+// Submit order to API and get response
+try {
+    const [tx_hash, execution_price] = await submitOptionOrder(deliverOptionParams, version)
+} catch(err) {
+    console.log(err)
+}
 ```
