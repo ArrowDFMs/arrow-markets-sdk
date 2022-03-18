@@ -38,7 +38,7 @@
         "type": "uint256"
       }
     ],
-    "name": "getOptionChainAddress",
+    "name": "getOptionChain",
     "outputs": [
       {
         "internalType": "address",
@@ -51,7 +51,7 @@
   },
   {
     "inputs": [],
-    "name": "getOptionChainAddresses",
+    "name": "getOptionChains",
     "outputs": [
       {
         "internalType": "address[]",
@@ -85,7 +85,7 @@
         "type": "uint256"
       }
     ],
-    "name": "getOptionContractAddress",
+    "name": "getOptionContract",
     "outputs": [
       {
         "internalType": "address",
@@ -98,7 +98,7 @@
   },
   {
     "inputs": [],
-    "name": "getOptionContractAddresses",
+    "name": "getOptionContracts",
     "outputs": [
       {
         "internalType": "address[]",

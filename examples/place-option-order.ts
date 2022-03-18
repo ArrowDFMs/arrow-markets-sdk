@@ -23,7 +23,7 @@ const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, providers.fuji)
 
 async function main() {
     // Specify version
-    const version = 'v2' // choices are 'v2' and 'v3'
+    const version = 'v3' // choices are 'v2' and 'v3'
 
     // Get stablecoin contract from Arrow
     const stablecoin = await getStablecoinContract(wallet, version)
@@ -35,7 +35,7 @@ async function main() {
     // Calculate a future expiration (as a UNIX timestamp)
     // expirations must always be at 9:00 PM UTC
     const twoWeeksFromNow = moment().utc()
-                                    .add(4, 'weeks')
+                                    .add(2, 'weeks')
                                     .set('hour', 21)
                                     .set('minute', 0)
                                     .set('second', 0)
@@ -48,8 +48,8 @@ async function main() {
     const option: Option = {
         "ticker": "AVAX", // Ticker for Avalanche token
         "expiration": readableExpiration, // Two weeks from now at 9:00 PM UTC
-        "strike": 87.02, // Long strike of $87.02 (note that the ordering of the strikes in v3 is always [long, short] for spreads and always [long, 0] for naked calls/puts)
-        "contractType": 0, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+        "strike": [87.02, 88.00], // Long strike of $87.02 (note that the ordering of the strikes in v3 is always [long, short] for spreads and always [long, 0] for naked calls/puts)
+        "contractType": 2, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
         "quantity": 2, // 2 contracts
         "priceHistory": [] // Placeholder for price history data
     }
