@@ -110,6 +110,31 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "depositorAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "epoch",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "InsurancePoolCapitalization",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "oldAddress",
         "type": "address"
       },
@@ -409,9 +434,9 @@
       },
       {
         "indexed": false,
-        "internalType": "uint256",
+        "internalType": "uint256[2]",
         "name": "strike",
-        "type": "uint256"
+        "type": "uint256[2]"
       },
       {
         "indexed": false,
@@ -464,9 +489,9 @@
       },
       {
         "indexed": false,
-        "internalType": "uint256",
+        "internalType": "uint256[2]",
         "name": "strike",
-        "type": "uint256"
+        "type": "uint256[2]"
       },
       {
         "indexed": false,
@@ -654,6 +679,29 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_depositor",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_epoch",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "emitInsurancePoolCapitalization",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "components": [
           {
             "internalType": "address",
@@ -681,9 +729,9 @@
             "type": "uint256"
           },
           {
-            "internalType": "uint256",
+            "internalType": "uint256[2]",
             "name": "strike",
-            "type": "uint256"
+            "type": "uint256[2]"
           },
           {
             "internalType": "string",
@@ -746,9 +794,9 @@
             "type": "uint256"
           },
           {
-            "internalType": "uint256",
+            "internalType": "uint256[2]",
             "name": "strike",
-            "type": "uint256"
+            "type": "uint256[2]"
           },
           {
             "internalType": "string",
@@ -921,9 +969,9 @@
             "type": "uint256"
           },
           {
-            "internalType": "uint256",
+            "internalType": "uint256[2]",
             "name": "strike",
-            "type": "uint256"
+            "type": "uint256[2]"
           },
           {
             "internalType": "string",
@@ -976,9 +1024,9 @@
             "type": "uint256"
           },
           {
-            "internalType": "uint256",
+            "internalType": "uint256[2]",
             "name": "strike",
-            "type": "uint256"
+            "type": "uint256[2]"
           },
           {
             "internalType": "string",
@@ -1115,6 +1163,13 @@
       }
     ],
     "name": "emitSystemAddressUpdated",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "setOptionChainFactoryAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
