@@ -1,5 +1,5 @@
 {
-  "name": "arrow-sdk",
+  "name": "@arrow-markets/arrow-sdk",
   "version": "1.0.0",
   "description": "This SDK is meant to make it easier for developers to connect to the Arrow API.",
   "main": "",
@@ -10,7 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Subharmonic Technologies, Inc.",
-  "license": "BSD-3-Clause",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "@types/node": "17.0.17",
     "axios": "0.24.0",
