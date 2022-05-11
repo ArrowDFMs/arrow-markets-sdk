@@ -1,7 +1,7 @@
 {
   "name": "arrow-sdk",
   "version": "1.0.0",
-  "description": "Arrow Markets has an API for interacting with its contract suite. This is due to the fact that we compute an option's price off-chain and therefore must pass it securely as a part of the transaction parameters. The transaction must be submitted by the deployer of the contracts.",
+  "description": "This SDK is meant to make it easier for developers to connect to the Arrow API.",
   "main": "",
   "directories": {
     "example": "examples"

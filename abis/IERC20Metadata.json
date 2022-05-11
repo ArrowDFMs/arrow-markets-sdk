@@ -74,24 +74,6 @@
     "type": "function"
   },
   {
-    "constant": false,
-    "inputs": [
-        {
-            "name": "_to",
-            "type": "address"
-        },
-        {
-            "name": "_value",
-            "type": "uint256"
-        }
-    ],
-    "name": "allocateTo",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",

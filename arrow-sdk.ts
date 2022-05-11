@@ -13,7 +13,9 @@ import {
     ArrowOptionChainProxy
 } from './build'
 
-const UNSUPPORTED_VERSION_ERROR = new Error("Please select a supported contract version (v2 or v3)")
+/**************************************
+ *             INTERFACES             *
+ **************************************/
 
 export interface Option {
     ticker: string;
@@ -38,6 +40,12 @@ export interface DeliverOptionParams extends OptionOrderParams {
     bigNumberStrike: ethers.BigNumber;
     bigNumberThresholdPrice: ethers.BigNumber;
 }
+
+/**************************************
+ *          USEFUL CONSTANTS          *
+ **************************************/
+
+const UNSUPPORTED_VERSION_ERROR = new Error("Please select a supported contract version (v2 or v3)")
 
 export const urls = {
     api: {
@@ -75,6 +83,17 @@ export const bytecodeHashes = {
     }
 }
 
+/***************************************
+ *           ARROW API CALLS           *
+ ***************************************/
+
+/**
+ * Get an estimated price for the given option parameters from Arrow's pricing model.
+ * 
+ * @param option Object containing parameters that define an option on Arrow.
+ * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
+ * @returns Float that represents an estimate of the option price using Arrow's pricing model.
+ */
 export async function estimateOptionPrice(option: Option, version='v2') {
     let strike = undefined
     if (version === 'v2') {
@@ -97,6 +116,13 @@ export async function estimateOptionPrice(option: Option, version='v2') {
     return estimatedOptionPrice
 }
 
+/**
+ * Submit an option order to the API to compute the live price and submit a transaction to the blockchain.
+ * 
+ * @param deliverOptionParams Object containing parameters necessary to create an option order on Arrow.
+ * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
+ * @returns Transaction hash and per-option execution price of the option transaction.
+ */
 export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams, version='v2') {
     // Submit option order through API
     const {
@@ -115,6 +141,17 @@ export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams
     return [tx_hash, execution_price]
 }
 
+/***************************************
+ *      CONTRACT GETTER FUNCTIONS      *
+ ***************************************/
+
+/**
+ * Get the router contract from Arrow's contract suite.
+ * 
+ * @param wallet Wallet with which you want to connect the instance of the router contract. Default is Fuji provider.
+ * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
+ * @returns Local instance of ethers.Contract for the Arrow router contract.
+ */
 export function getRouterContract(
     wallet:ethers.providers.Provider|ethers.Wallet=providers.fuji,
     version='v2'
@@ -127,6 +164,13 @@ export function getRouterContract(
     return router
 }
 
+/**
+ * Get the stablecoin contract that is associated with Arrow's contract suite.
+ * 
+ * @param wallet Wallet with which you want to connect the instance of the stablecoin contract. Default is Fuji provider.
+ * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
+ * @returns Local instance of ethers.Contract for the stablecoin contract.
+ */
 export async function getStablecoinContract(
     wallet:ethers.providers.Provider|ethers.Wallet=providers.fuji,
     version='v2'
@@ -139,6 +183,13 @@ export async function getStablecoinContract(
     return stablecoin
 }
 
+/**
+ * Get the events contract from Arrow's contract suite.
+ * 
+ * @param wallet Wallet with which you want to connect the instance of the Arrow events contract. Default is Fuji provider.
+ * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
+ * @returns Local instance of ethers.Contract for the Arrow events contract.
+ */
 export async function getEventsContract(
     wallet:ethers.providers.Provider|ethers.Wallet=providers.fuji,
     version='v2'
@@ -151,6 +202,13 @@ export async function getEventsContract(
     return events
 }
 
+/**
+ * Get the registry contract from Arrow's registry suite.
+ * 
+ * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
+ * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
+ * @returns Local instance of ethers.Contract for the Arrow registry contract.
+ */
 export async function getRegistryContract(
     wallet:ethers.providers.Provider|ethers.Wallet=providers.fuji,
     version='v2'
@@ -163,6 +221,18 @@ export async function getRegistryContract(
     return registry
 }
 
+/****************************************
+ *           HELPER FUNCTIONS           *
+ ****************************************/
+
+/**
+ * Compute address of on-chain option chain contract using CREATE2 functionality.
+ * 
+ * @param ticker Ticker of the underlying asset.
+ * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
+ * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
+ * @returns Address of the option chain corresponding to the passed ticker and expiration.
+ */
 export async function computeOptionChainAddress(ticker, readableExpiration, version='v2') {
     // Get chain factory contract address from router
     const router = getRouterContract(providers.fuji, version)
@@ -191,6 +261,14 @@ export async function computeOptionChainAddress(ticker, readableExpiration, vers
     return optionChainAddress
 }
 
+/**
+ * Help construct DeliverOptionParams object that can be passed to the Arrow API to submit an option order.
+ * 
+ * @param optionOrderParams Object containing parameters necesssary in computing parameters for submitting an option order.
+ * @param wallet Wallet with which you want to submit the option order.
+ * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
+ * @returns JSON that contains the variables necessary in completing the option order.
+ */
 export async function prepareDeliverOptionParams(optionOrderParams: OptionOrderParams, wallet, version='v2'): Promise<DeliverOptionParams> {
     // Get stablecoin decimals
     const stablecoinDecimals = await (await getStablecoinContract(wallet, version)).decimals()
@@ -258,26 +336,43 @@ export async function prepareDeliverOptionParams(optionOrderParams: OptionOrderP
     }
 }
 
-export async function settleOptions(wallet, owner, ticker, expiration, version='v2') {
+/***************************************
+ *       CONTRACT FUNCTION CALLS       *
+ ***************************************/
+
+/**
+ * Call smart contract function to settle options for a specific option chain on Arrow.
+ * 
+ * @param wallet Wallet with which you want to call the option settlement function.
+ * @param ticker Ticker of the underlying asset.
+ * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
+ * @param owner Address of the option owner for whom you are settling. This is only required for 'v3'.
+ * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
+ */
+export async function settleOptions(wallet, ticker, readableExpiration, owner=undefined, version='v2') {
     const router = getRouterContract(wallet, version)
     if (version === 'v2') {
         try {
-            await router.callStatic.settleOption(owner, ticker, expiration)
-            await router.settleOption(owner, ticker, expiration)
+            await router.callStatic.settleOption(ticker, readableExpiration)
+            await router.settleOption(ticker, readableExpiration)
         } catch(err) {
-            throw new Error("Settlement call would fail on chain")
+            throw new Error("Settlement call would fail on chain.")
         }
     } else if (version === 'v3') {
         try {
-            await router.callStatic.settleOptions(owner, ticker, expiration)
-            await router.settleOptions(owner, ticker, expiration)
+            await router.callStatic.settleOptions(owner, ticker, readableExpiration)
+            await router.settleOptions(owner, ticker, readableExpiration)
         } catch(err) {
-            throw new Error("Settlement call would fail on chain")
+            throw new Error("Settlement call would fail on chain.")
         }
     } else {
         throw UNSUPPORTED_VERSION_ERROR
     }
 }
+
+/**************************************
+ *           DEFAULT EXPORT           *
+ **************************************/
 
 const arrowsdk = {
     // Variables
@@ -295,7 +390,8 @@ const arrowsdk = {
     getEventsContract,
     getRegistryContract,
     computeOptionChainAddress,
-    prepareDeliverOptionParams
+    prepareDeliverOptionParams,
+    settleOptions
 }
 
 export default arrowsdk
