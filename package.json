@@ -1,16 +1,29 @@
 {
   "name": "@arrow-markets/arrow-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "This SDK is meant to make it easier for developers to connect to the Arrow API.",
-  "main": "",
+  "main": "lib/src/arrow-sdk.js",
+  "types": "lib/src/arrow-sdk.d.ts",
   "directories": {
     "example": "examples"
   },
+  "files": ["lib/**/*"],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "prepare" : "npm run build",
+    "version" : "npm run format && git add -A src",
+    "postversion" : "git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArrowDFMs/arrow-markets-sdk.git"
   },
   "author": "Subharmonic Technologies, Inc.",
   "license": "GPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/ArrowDFMs/arrow-markets-sdk/issues"
+  },
+  "homepage": "https://github.com/ArrowDFMs/arrow-markets-sdk#readme",
   "dependencies": {
     "@types/node": "17.0.17",
     "axios": "0.24.0",

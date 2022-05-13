@@ -7,11 +7,11 @@ import {
     IArrowRouter,
     IArrowEvents,
     IArrowRegistry
-} from './abis'
+} from '../abis'
 
 import {
     ArrowOptionChainProxy
-} from './build'
+} from '../build'
 
 /**************************************
  *             INTERFACES             *
@@ -37,7 +37,7 @@ export interface DeliverOptionParams extends OptionOrderParams {
     amountToApprove: ethers.BigNumber;
     unixExpiration: number;
     formattedStrike: string;
-    bigNumberStrike: ethers.BigNumber;
+    bigNumberStrike: ethers.BigNumber | ethers.BigNumber[];
     bigNumberThresholdPrice: ethers.BigNumber;
 }
 
@@ -45,40 +45,46 @@ export interface DeliverOptionParams extends OptionOrderParams {
  *          USEFUL CONSTANTS          *
  **************************************/
 
-const UNSUPPORTED_VERSION_ERROR = new Error("Please select a supported contract version (v2 or v3)")
+const UNSUPPORTED_VERSION_ERROR = new Error("Please select a supported contract version.")
 
-export const urls = {
-    api: {
-        v2: 'https://fuji-v2-api.arrow.markets/v1',
-        v3: 'https://fuji-v2-api.arrow.markets/v1'
+export const urls : any = {
+    "api": {
+        "v2": 'https://fuji-v2-api.arrow.markets/v1',
+        "v3": 'https://fuji-v2-api.arrow.markets/v1',
+        "competition": 'https://competition-api.arrow.markets/v1'
     },
-    provider: {
-        fuji: 'https://api.avax-test.network/ext/bc/C/rpc'
+    "provider": {
+        "fuji": 'https://api.avax-test.network/ext/bc/C/rpc'
     }
 }
 
-export const providers = {
-    fuji: new ethers.providers.JsonRpcProvider(urls.provider.fuji)
+export const providers : any = {
+    "fuji": new ethers.providers.JsonRpcProvider(urls.provider.fuji)
 }
 
-export const addresses = {
-    fuji: {
-        router: {
-            v2: ethers.utils.getAddress("0x28121fb95692a9be3fb1c6891ffee74b88bdfb2b"),
-            v3: ethers.utils.getAddress("0x31122CeF9891Ef661C99352266FA0FF0079a0e06")
+export const addresses : any = {
+    "fuji": {
+        "router": {
+            "v2": ethers.utils.getAddress("0x28121fb95692a9be3fb1c6891ffee74b88bdfb2b"),
+            "v3": ethers.utils.getAddress("0x31122CeF9891Ef661C99352266FA0FF0079a0e06"),
+            "competition": ethers.utils.getAddress("0x3e8a9Ad1336eF8007A416383daD084ef52E8DA86")
         }
     }
 }
 
-export const bytecodeHashes = {
-    ArrowOptionChainProxy: {
-        v2: ethers.utils.solidityKeccak256(
+export const bytecodeHashes : any = {
+    "ArrowOptionChainProxy": {
+        "v2": ethers.utils.solidityKeccak256(
             ['bytes'],
             [ArrowOptionChainProxy.v2.bytecode]
         ),
-        v3: ethers.utils.solidityKeccak256(
+        "v3": ethers.utils.solidityKeccak256(
             ['bytes'],
             [ArrowOptionChainProxy.v3.bytecode]
+        ),
+        "competition": ethers.utils.solidityKeccak256(
+            ['bytes'],
+            [ArrowOptionChainProxy.competition.bytecode]
         )
     }
 }
@@ -104,14 +110,17 @@ export async function estimateOptionPrice(option: Option, version='v2') {
         throw UNSUPPORTED_VERSION_ERROR
     }
 
-    const estimatedOptionPriceReponse = await axios.post(urls.api[version] + '/estimate-option-price', {
-        "ticker": option.ticker,
-        "expiration": option.expiration, // API only takes in readable expirations so it can manually set the expiration at 9:00 PM UTC
-        "strike": strike,
-        "contract_type": option.contractType,
-        "quantity": option.quantity,
-        "price_history": option.priceHistory!
-    })
+    const estimatedOptionPriceReponse = await axios.post(
+        urls.api[version] + '/estimate-option-price',
+        {
+            "ticker": option.ticker,
+            "expiration": option.expiration, // API only takes in readable expirations so it can manually set the expiration at 9:00 PM UTC
+            "strike": strike,
+            "contract_type": option.contractType,
+            "quantity": option.quantity,
+            "price_history": option.priceHistory!
+        }
+    )
     const estimatedOptionPrice = parseFloat(estimatedOptionPriceReponse.data.option_price.toFixed(6))
     return estimatedOptionPrice
 }
@@ -127,17 +136,20 @@ export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams
     // Submit option order through API
     const {
         data: { tx_hash, execution_price }
-    } = await axios.post(urls.api[version] + '/submit-order', {
-        buy_flag: deliverOptionParams.buyFlag,
-        ticker: deliverOptionParams.ticker,
-        expiration: deliverOptionParams.expiration,
-        strike: deliverOptionParams.formattedStrike,
-        contract_type: deliverOptionParams.contractType,
-        quantity: deliverOptionParams.quantity,
-        threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
-        hashed_params: deliverOptionParams.hashedValues,
-        signature: deliverOptionParams.signature
-    })
+    } = await axios.post(
+        urls.api[version] + '/submit-order',
+        {
+            buy_flag: deliverOptionParams.buyFlag,
+            ticker: deliverOptionParams.ticker,
+            expiration: deliverOptionParams.expiration,
+            strike: deliverOptionParams.formattedStrike,
+            contract_type: deliverOptionParams.contractType,
+            quantity: deliverOptionParams.quantity,
+            threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+            hashed_params: deliverOptionParams.hashedValues,
+            signature: deliverOptionParams.signature
+        }
+    )
     return [tx_hash, execution_price]
 }
 
@@ -233,7 +245,7 @@ export async function getRegistryContract(
  * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
  * @returns Address of the option chain corresponding to the passed ticker and expiration.
  */
-export async function computeOptionChainAddress(ticker, readableExpiration, version='v2') {
+export async function computeOptionChainAddress(ticker: string, readableExpiration: string, version='v2') {
     // Get chain factory contract address from router
     const router = getRouterContract(providers.fuji, version)
     let optionChainFactoryAddress = undefined
@@ -269,7 +281,11 @@ export async function computeOptionChainAddress(ticker, readableExpiration, vers
  * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
  * @returns JSON that contains the variables necessary in completing the option order.
  */
-export async function prepareDeliverOptionParams(optionOrderParams: OptionOrderParams, wallet, version='v2'): Promise<DeliverOptionParams> {
+export async function prepareDeliverOptionParams(
+    optionOrderParams: OptionOrderParams,
+    wallet: ethers.Wallet,
+    version='v2'
+): Promise<DeliverOptionParams> {
     // Get stablecoin decimals
     const stablecoinDecimals = await (await getStablecoinContract(wallet, version)).decimals()
 
@@ -284,9 +300,10 @@ export async function prepareDeliverOptionParams(optionOrderParams: OptionOrderP
         formattedStrike = optionOrderParams.strike.toString()
         strikeType = 'uint256'
     } else if (version === 'v3') {
+        const strikes = optionOrderParams.strike as number[]
         bigNumberStrike = [
-            ethers.utils.parseUnits(optionOrderParams.strike[0].toString(), stablecoinDecimals),
-            ethers.utils.parseUnits(optionOrderParams.strike[1].toString(), stablecoinDecimals)
+            ethers.utils.parseUnits(strikes[0].toString(), stablecoinDecimals),
+            ethers.utils.parseUnits(strikes[1].toString(), stablecoinDecimals)
         ]
         formattedStrike = (optionOrderParams.strike as number[]).join('|')
         strikeType = 'uint256[2]'
@@ -349,7 +366,13 @@ export async function prepareDeliverOptionParams(optionOrderParams: OptionOrderP
  * @param owner Address of the option owner for whom you are settling. This is only required for 'v3'.
  * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
  */
-export async function settleOptions(wallet, ticker, readableExpiration, owner=undefined, version='v2') {
+export async function settleOptions(
+    wallet: ethers.Wallet,
+    ticker: string,
+    readableExpiration: string,
+    owner=undefined,
+    version='v2'
+) {
     const router = getRouterContract(wallet, version)
     if (version === 'v2') {
         try {

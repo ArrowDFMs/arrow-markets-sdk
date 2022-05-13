@@ -8,17 +8,24 @@ import IArrowEventsV3 from './v3/IArrowEvents.json'
 import IArrowRegistryV3 from './v3/IArrowRegistry.json'
 import IArrowRouterV3 from './v3/IArrowRouter.json'
 
-const IArrowEvents = {
-    v2: IArrowEventsV2,
-    v3: IArrowEventsV3
+import IArrowEventsCompetition from './competition/IArrowEvents.json'
+import IArrowRegistryCompetition from './competition/IArrowRegistry.json'
+import IArrowRouterCompetition from './competition/IArrowRouter.json'
+
+const IArrowEvents : any = {
+    "v2": IArrowEventsV2,
+    "v3": IArrowEventsV3,
+    "competition": IArrowEventsCompetition
 }
-const IArrowRegistry = {
-    v2: IArrowRegistryV2,
-    v3: IArrowRegistryV3
+const IArrowRegistry : any = {
+    "v2": IArrowRegistryV2,
+    "v3": IArrowRegistryV3,
+    "competition": IArrowRegistryCompetition
 }
-const IArrowRouter = {
-    v2: IArrowRouterV2,
-    v3: IArrowRouterV3
+const IArrowRouter : any = {
+    "v2": IArrowRouterV2,
+    "v3": IArrowRouterV3,
+    "competition": IArrowRouterCompetition
 }
 
 export {
