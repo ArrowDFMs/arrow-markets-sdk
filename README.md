@@ -6,7 +6,7 @@ There is an `arrow-sdk.ts` file in the repository that contains useful variables
 
 ## API URLs
 
-The API can be accessed via `https://fuji-v2-api.arrow.markets/v1/<ENDPOINT>`\
+The API can be accessed via `https://fuji-v2-api.arrow.markets/v1/<ENDPOINT>` or `https://competition-api.arrow.markets/v1/<ENDPOINT>`\
 The Fuji test network can be accessed via `https://api.avax-test.network/ext/bc/C/rpc`
 
 ## Endpoints

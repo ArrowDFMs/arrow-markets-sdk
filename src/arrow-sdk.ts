@@ -19,7 +19,7 @@ import {
 
 export interface Option {
     ticker: string;
-    expiration: string | number;
+    expiration: string;
     strike: number | number[];
     contractType: number;
     quantity: number;
@@ -104,7 +104,7 @@ export async function estimateOptionPrice(option: Option, version='v2') {
     let strike = undefined
     if (version === 'v2') {
         strike = option.strike
-    } else if (version === 'v3') {
+    } else if (version === 'v3' || version === 'competition') {
         strike = (option.strike as number[]).join('|')
     } else {
         throw UNSUPPORTED_VERSION_ERROR
@@ -165,7 +165,7 @@ export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams
  * @returns Local instance of ethers.Contract for the Arrow router contract.
  */
 export function getRouterContract(
-    wallet:ethers.providers.Provider|ethers.Wallet=providers.fuji,
+    wallet:ethers.providers.Provider|ethers.Wallet|ethers.Signer=providers.fuji,
     version='v2'
 ) {
     const router = new ethers.Contract(
@@ -184,7 +184,7 @@ export function getRouterContract(
  * @returns Local instance of ethers.Contract for the stablecoin contract.
  */
 export async function getStablecoinContract(
-    wallet:ethers.providers.Provider|ethers.Wallet=providers.fuji,
+    wallet:ethers.providers.Provider|ethers.Wallet|ethers.Signer=providers.fuji,
     version='v2'
 ) {
     const stablecoin = new ethers.Contract(
@@ -203,7 +203,7 @@ export async function getStablecoinContract(
  * @returns Local instance of ethers.Contract for the Arrow events contract.
  */
 export async function getEventsContract(
-    wallet:ethers.providers.Provider|ethers.Wallet=providers.fuji,
+    wallet:ethers.providers.Provider|ethers.Wallet|ethers.Signer=providers.fuji,
     version='v2'
 ) {
     const events = new ethers.Contract(
@@ -222,7 +222,7 @@ export async function getEventsContract(
  * @returns Local instance of ethers.Contract for the Arrow registry contract.
  */
 export async function getRegistryContract(
-    wallet:ethers.providers.Provider|ethers.Wallet=providers.fuji,
+    wallet:ethers.providers.Provider|ethers.Wallet|ethers.Signer=providers.fuji,
     version='v2'
 ) {
     const registry = new ethers.Contract(
@@ -283,7 +283,7 @@ export async function computeOptionChainAddress(ticker: string, readableExpirati
  */
 export async function prepareDeliverOptionParams(
     optionOrderParams: OptionOrderParams,
-    wallet: ethers.Wallet,
+    wallet: ethers.Wallet|ethers.Signer,
     version='v2'
 ): Promise<DeliverOptionParams> {
     // Get stablecoin decimals
@@ -299,7 +299,7 @@ export async function prepareDeliverOptionParams(
         bigNumberStrike = ethers.utils.parseUnits(optionOrderParams.strike.toString(), stablecoinDecimals)
         formattedStrike = optionOrderParams.strike.toString()
         strikeType = 'uint256'
-    } else if (version === 'v3') {
+    } else if (version === 'v3' || version === 'competition') {
         const strikes = optionOrderParams.strike as number[]
         bigNumberStrike = [
             ethers.utils.parseUnits(strikes[0].toString(), stablecoinDecimals),
@@ -367,7 +367,7 @@ export async function prepareDeliverOptionParams(
  * @param version String for version of Arrow contract suite with which to interact. Default is 'v2'.
  */
 export async function settleOptions(
-    wallet: ethers.Wallet,
+    wallet: ethers.Wallet|ethers.Signer,
     ticker: string,
     readableExpiration: string,
     owner=undefined,
@@ -381,7 +381,7 @@ export async function settleOptions(
         } catch(err) {
             throw new Error("Settlement call would fail on chain.")
         }
-    } else if (version === 'v3') {
+    } else if (version === 'v3' || version === 'competition') {
         try {
             await router.callStatic.settleOptions(owner, ticker, readableExpiration)
             await router.settleOptions(owner, ticker, readableExpiration)

@@ -14,7 +14,7 @@ import {
     estimateOptionPrice,
     submitOptionOrder,
     DeliverOptionParams
-} from '../arrow-sdk'
+} from '../lib/src/arrow-sdk'
 import { ethers } from 'ethers'
 import moment from 'moment'
 
@@ -48,8 +48,8 @@ async function main() {
     const option: Option = {
         "ticker": "AVAX", // Ticker for Avalanche token
         "expiration": readableExpiration, // Two weeks from now at 9:00 PM UTC
-        "strike": [87.02, 88.00], // Long strike of $87.02 (note that the ordering of the strikes in v3 is always [long, short] for spreads and always [long, 0] for naked calls/puts)
-        "contractType": 2, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+        "strike": [87.02, 0.0], // Long strike of $87.02 (note that the ordering of the strikes in v3 is always [long, short] for spreads and always [long, 0] for naked calls/puts)
+        "contractType": 1, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
         "quantity": 2, // 2 contracts
         "priceHistory": [] // Placeholder for price history data
     }
@@ -57,7 +57,7 @@ async function main() {
     // Get 12 weeks of price history from CoinGecko
     const cryptoId = 'avalanche-2' // Assuming AVAX ticker. Please refer to CoinGecko's documentation for other IDs
     const priceData = await axios.get(`https://api.coingecko.com/api/v3/coins/${cryptoId}/market_chart?vs_currency=usd&days=84`) // 12 weeks * 7 days per week = 84 days
-    option.priceHistory = priceData.data.prices.map(priceArr => priceArr[1]) // Extract the prices out of the (timestamp, price) tuples
+    option.priceHistory = priceData.data.prices.map((priceArr: number[]) => priceArr[1]) // Extract the prices out of the (timestamp, price) tuples
 
     // Estimate option price by making API request
     const estimatedOptionPrice = await estimateOptionPrice(option, version)
