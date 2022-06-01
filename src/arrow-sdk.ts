@@ -296,14 +296,14 @@ export async function prepareDeliverOptionParams(
     let formattedStrike = undefined
     let strikeType = undefined
     if (version === 'v2') {
-        bigNumberStrike = ethers.utils.parseUnits(optionOrderParams.strike.toString(), stablecoinDecimals)
-        formattedStrike = optionOrderParams.strike.toString()
+        formattedStrike = (optionOrderParams.strike as number).toFixed(2)
+        bigNumberStrike = ethers.utils.parseUnits(formattedStrike, stablecoinDecimals)
         strikeType = 'uint256'
     } else if (version === 'v3' || version === 'competition') {
         const strikes = optionOrderParams.strike as number[]
         bigNumberStrike = [
-            ethers.utils.parseUnits(strikes[0].toString(), stablecoinDecimals),
-            ethers.utils.parseUnits(strikes[1].toString(), stablecoinDecimals)
+            ethers.utils.parseUnits(strikes[0].toFixed(2), stablecoinDecimals),
+            ethers.utils.parseUnits(strikes[1].toFixed(2), stablecoinDecimals)
         ]
         formattedStrike = (optionOrderParams.strike as number[]).join('|')
         strikeType = 'uint256[2]'
