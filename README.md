@@ -121,7 +121,7 @@ The code below is an example of how to access contract addresses through the Arr
 import arrowsdk from '../arrow-sdk'
 
 async function main() {
-    const version = 'v3'
+    const version = arrowsdk.VERSION.V3
     const stablecoin = await arrowsdk.getStablecoinContract(arrowsdk.providers.fuji, version)
 }
 main()
@@ -208,7 +208,7 @@ The `tx_hash` and `execution_price` parameters will be populated if the API call
 ```javascript
 // Submit order to API and get response
 try {
-    const [tx_hash, execution_price] = await submitOptionOrder(deliverOptionParams, version)
+    const {tx_hash, execution_price} = await submitOptionOrder(deliverOptionParams, version)
 } catch(err) {
     console.log(err)
 }
