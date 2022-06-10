@@ -1,36 +1,36 @@
 {
-  "name": "@arrow-markets/arrow-sdk",
-  "version": "1.0.4",
-  "description": "This SDK is meant to make it easier for developers to connect to the Arrow API.",
-  "main": "lib/src/arrow-sdk.js",
-  "types": "lib/src/arrow-sdk.d.ts",
-  "directories": {
-    "example": "examples"
-  },
-  "files": ["lib/**/*"],
-  "scripts": {
-    "build": "tsc",
-    "prepare" : "npm run build",
-    "version" : "npm run format && git add -A src",
-    "postversion" : "git push && git push --tags"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ArrowDFMs/arrow-markets-sdk.git"
-  },
-  "author": "Subharmonic Technologies, Inc.",
-  "license": "GPL-3.0-only",
-  "bugs": {
-    "url": "https://github.com/ArrowDFMs/arrow-markets-sdk/issues"
-  },
-  "homepage": "https://github.com/ArrowDFMs/arrow-markets-sdk#readme",
-  "dependencies": {
-    "@types/node": "17.0.17",
-    "axios": "0.24.0",
-    "dotenv": "10.0.0",
-    "ethers": "5.5.2",
-    "moment": "2.29.1",
-    "ts-node": "10.5.0",
-    "typescript": "4.5.4"
-  }
+    "name": "@arrow-markets/arrow-sdk",
+    "version": "1.0.5",
+    "description": "This SDK is meant to make it easier for developers to connect to the Arrow API.",
+    "main": "lib/src/arrow-sdk.js",
+    "types": "lib/src/arrow-sdk.d.ts",
+    "directories": {
+        "example": "examples"
+    },
+    "files": ["lib/**/*"],
+    "scripts": {
+        "build": "tsc",
+        "prepare" : "npm run build",
+        "version" : "npm run format && git add -A src",
+        "postversion" : "git push && git push --tags"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ArrowDFMs/arrow-markets-sdk.git"
+    },
+    "author": "Subharmonic Technologies, Inc.",
+    "license": "GPL-3.0-only",
+    "bugs": {
+        "url": "https://github.com/ArrowDFMs/arrow-markets-sdk/issues"
+    },
+    "homepage": "https://github.com/ArrowDFMs/arrow-markets-sdk#readme",
+    "dependencies": {
+        "@types/node": "17.0.17",
+        "axios": "0.24.0",
+        "dotenv": "10.0.0",
+        "ethers": "5.5.2",
+        "moment": "2.29.3",
+        "ts-node": "10.5.0",
+        "typescript": "4.5.4"
+    }
 }
