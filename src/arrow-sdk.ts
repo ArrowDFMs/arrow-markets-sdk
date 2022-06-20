@@ -392,9 +392,11 @@ export async function computeOptionChainAddress(
     const router = getRouterContract(providers.fuji, version)
 
     let optionChainFactoryAddress = undefined
+    
     switch(version) {
         case VERSION.V2: {
-            optionChainFactoryAddress = await router.getChainFactoryAddress()       
+            console.log('Hello, V2');
+            optionChainFactoryAddress = await router.getChainFactoryAddress();
         }
         case VERSION.V3:
         case VERSION.COMPETITION: {
