@@ -117,13 +117,15 @@ export const bytecodeHashes: any = {
 export async function estimateOptionPrice(option: Option, version: VERSION = VERSION.V2) {
     let strike = undefined
     switch(version) {
-        case VERSION.V2: {
+        case VERSION.V2: 
             strike = option.strike
-        }
+            break;
         case VERSION.V3:
-        case VERSION.COMPETITION: {
+        case VERSION.COMPETITION: 
             strike = (option.strike as number[]).join('|')    
-        }
+            break;
+        default:
+            throw UNSUPPORTED_VERSION_ERROR;
     }
 
     const estimatedOptionPriceReponse = await axios.post(
@@ -447,18 +449,20 @@ export async function prepareDeliverOptionParams(
     let strikeType = undefined
 
     switch(version) {
-        case VERSION.V2: {
+        case VERSION.V2: 
             formattedStrike = (optionOrderParams.strike as number).toFixed(2)
             bigNumberStrike = ethers.utils.parseUnits(formattedStrike, stablecoinDecimals)
             strikeType = 'uint256'
-        }
+            break;
         case VERSION.V3:
-        case VERSION.COMPETITION: {
+        case VERSION.COMPETITION: 
             const strikes = (optionOrderParams.strike as number[]).map(strike => strike.toFixed(2))
             bigNumberStrike = strikes.map(strike => ethers.utils.parseUnits(strike, stablecoinDecimals))
             formattedStrike = strikes.join('|')
             strikeType = 'uint256[2]'
-        }
+            break;
+        default:
+            throw UNSUPPORTED_VERSION_ERROR;
     }
 
     // Hash and sign the option order parameters for on-chain verification
@@ -526,23 +530,25 @@ export async function settleOptions(
     const router = getRouterContract(wallet, version)
 
     switch(version) {
-        case VERSION.V2: {
+        case VERSION.V2: 
             try {
                 await router.callStatic.settleOption(ticker, readableExpiration)
                 await router.settleOption(ticker, readableExpiration)
             } catch(err) {
                 throw new Error("Settlement call would fail on chain.")
             }    
-        }
+            break;
         case VERSION.V3:
-        case VERSION.COMPETITION: {
+        case VERSION.COMPETITION: 
             try {
                 await router.callStatic.settleOptions(owner, ticker, readableExpiration)
                 await router.settleOptions(owner, ticker, readableExpiration)
             } catch(err) {
                 throw new Error("Settlement call would fail on chain.")
             }
-        }
+            break;
+        default:
+            throw UNSUPPORTED_VERSION_ERROR;
     }
 }
 
