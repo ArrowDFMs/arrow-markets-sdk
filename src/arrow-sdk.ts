@@ -53,6 +53,8 @@ export interface DeliverOptionParams extends OptionOrderParams {
  *          USEFUL CONSTANTS          *
  **************************************/
 
+const UNSUPPORTED_VERSION_ERROR = new Error("Please select a supported contract version.")
+
 export enum VERSION {
     V2 = 'v2',
     V3 = 'v3',
@@ -393,13 +395,15 @@ export async function computeOptionChainAddress(
 
     let optionChainFactoryAddress = undefined
     switch(version) {
-        case VERSION.V2: {
-            optionChainFactoryAddress = await router.getChainFactoryAddress()       
-        }
+        case VERSION.V2: 
+            optionChainFactoryAddress = await router.getChainFactoryAddress();
+            break;
         case VERSION.V3:
-        case VERSION.COMPETITION: {
+        case VERSION.COMPETITION: 
             optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
-        }
+            break;
+        default:
+            throw UNSUPPORTED_VERSION_ERROR;
     }
 
     // Build salt for CREATE2
