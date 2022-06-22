@@ -218,14 +218,12 @@ export async function getStrikeGrid(
  */
 export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams, version: VERSION = VERSION.V2) {
     // Submit option order through API
-    const {
-        data: { tx_hash, execution_price }
-    } = await axios.post(
+    const orderSubmissionResponse = await axios.post(
         urls.api[version] + '/submit-order',
         {
             buy_flag: deliverOptionParams.buyFlag,
             ticker: deliverOptionParams.ticker,
-            expiration: deliverOptionParams.expiration,
+            expiration: deliverOptionParams.expiration, // readableExpiration
             strike: deliverOptionParams.formattedStrike,
             contract_type: deliverOptionParams.contractType,
             quantity: deliverOptionParams.quantity,
@@ -234,8 +232,8 @@ export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams
             signature: deliverOptionParams.signature
         }
     )
-    
-    return [tx_hash, execution_price]
+    // Return all data from response
+    return orderSubmissionResponse.data
 }
 
 /***************************************
