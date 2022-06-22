@@ -53,11 +53,14 @@ export interface DeliverOptionParams extends OptionOrderParams {
  *          USEFUL CONSTANTS          *
  **************************************/
 
+const UNSUPPORTED_VERSION_ERROR = new Error("Please select a supported contract version.")
+
 export enum VERSION {
     V2 = 'v2',
     V3 = 'v3',
     COMPETITION = 'competition'
 }
+
 
 export const urls: any = {
     "api": {
@@ -115,13 +118,15 @@ export const bytecodeHashes: any = {
 export async function estimateOptionPrice(option: Option, version: VERSION = VERSION.V2) {
     let strike = undefined
     switch(version) {
-        case VERSION.V2: {
+        case VERSION.V2: 
             strike = option.strike
-        }
+            break
         case VERSION.V3:
-        case VERSION.COMPETITION: {
+        case VERSION.COMPETITION: 
             strike = (option.strike as number[]).join('|')    
-        }
+            break
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
     }
 
     const estimatedOptionPriceReponse = await axios.post(
@@ -154,19 +159,27 @@ export async function getRecommendedOption(
     forecast: number,
     version: VERSION = VERSION.V2
 ) {
-    const recommendedOptionResponse = await axios.get(
-        urls.api[version] + `/get-recommended-strike?expiration=${readableExpiration}&forecast=${forecast}&ticker=${ticker}`
-    )
-    
-    const recommendedOption: Option = {
-        ticker: ticker,
-        expiration: readableExpiration,
-        strike: recommendedOptionResponse.data.strike,
-        contractType: recommendedOptionResponse.data.contract_type,
-        price: recommendedOptionResponse.data.option_price,
-        greeks: recommendedOptionResponse.data.greeks
+    switch(version) {
+        case VERSION.V2:
+        case VERSION.V3:
+        case VERSION.COMPETITION: 
+        const recommendedOptionResponse = await axios.get(
+            urls.api[version] + `/get-recommended-strike?expiration=${readableExpiration}&forecast=${forecast}&ticker=${ticker}`
+        )
+        
+        const recommendedOption: Option = {
+            ticker: ticker,
+            expiration: readableExpiration,
+            strike: recommendedOptionResponse.data.strike,
+            contractType: recommendedOptionResponse.data.contract_type,
+            price: recommendedOptionResponse.data.option_price,
+            greeks: recommendedOptionResponse.data.greeks
+        }
+        return recommendedOption
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
     }
-    return recommendedOption
+    
 }
 
 /**
@@ -184,25 +197,34 @@ export async function getStrikeGrid(
     contractType: number,
     version: VERSION = VERSION.V2
 ) {
-    const strikeGridResponse = await axios.get(
-        urls.api[version] + `/get-strike-grid?ticker=${ticker}&expiration=${readableExpiration}&contract_type=${contractType}`
-    )
-
-    const strikeGrid = []
-    for (let i = 0; i < strikeGridResponse.data.options.length; i++) {
-        const strikeGridOption = strikeGridResponse.data.options[i]
-        const option: Option = {
-            ticker: ticker,
-            expiration: readableExpiration,
-            strike: strikeGridOption.strike,
-            contractType: contractType,
-            price: strikeGridOption.price,
-            greeks:  strikeGridOption.greeks
+    switch(version) {
+        case VERSION.V2:
+        case VERSION.V3:
+        case VERSION.COMPETITION: 
+        const strikeGridResponse = await axios.get(
+            urls.api[version] + `/get-strike-grid?ticker=${ticker}&expiration=${readableExpiration}&contract_type=${contractType}`
+        )
+    
+        const strikeGrid = []
+        for (let i = 0; i < strikeGridResponse.data.options.length; i++) {
+            const strikeGridOption = strikeGridResponse.data.options[i]
+            const option: Option = {
+                ticker: ticker,
+                expiration: readableExpiration,
+                strike: strikeGridOption.strike,
+                contractType: contractType,
+                price: strikeGridOption.price,
+                greeks:  strikeGridOption.greeks
+            }
+            strikeGrid.push(option)
         }
-        strikeGrid.push(option)
+    
+        return strikeGrid
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
     }
 
-    return strikeGrid
+    
 }
 
 /**
@@ -213,24 +235,31 @@ export async function getStrikeGrid(
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
 export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams, version: VERSION = VERSION.V2) {
-    // Submit option order through API
-    const orderSubmissionResponse = await axios.post(
-        urls.api[version] + '/submit-order',
-        {
-            buy_flag: deliverOptionParams.buyFlag,
-            ticker: deliverOptionParams.ticker,
-            expiration: deliverOptionParams.expiration, // readableExpiration
-            strike: deliverOptionParams.formattedStrike,
-            contract_type: deliverOptionParams.contractType,
-            quantity: deliverOptionParams.quantity,
-            threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
-            hashed_params: deliverOptionParams.hashedValues,
-            signature: deliverOptionParams.signature
-        }
-    )
-    
-    // Return all data from response
-    return orderSubmissionResponse.data
+    switch(version) {
+        case VERSION.V2:
+        case VERSION.V3:
+        case VERSION.COMPETITION: 
+        // Submit option order through API
+        const orderSubmissionResponse = await axios.post(
+            urls.api[version] + '/submit-order',
+            {
+                buy_flag: deliverOptionParams.buyFlag,
+                ticker: deliverOptionParams.ticker,
+                expiration: deliverOptionParams.expiration, // readableExpiration
+                strike: deliverOptionParams.formattedStrike,
+                contract_type: deliverOptionParams.contractType,
+                quantity: deliverOptionParams.quantity,
+                threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+                hashed_params: deliverOptionParams.hashedValues,
+                signature: deliverOptionParams.signature
+            }
+        )
+        // Return all data from response
+        return orderSubmissionResponse.data
+
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
+    }
 }
 
 /***************************************
@@ -248,12 +277,20 @@ export function getRouterContract(
     wallet: ethers.providers.Provider | ethers.Wallet | ethers.Signer = providers.fuji,
     version: VERSION = VERSION.V2
 ) {
-    const router = new ethers.Contract(
-        addresses.fuji.router[version],
-        IArrowRouter[version],
-        wallet
-    )
-    return router
+    switch(version) {
+        case VERSION.V2:
+        case VERSION.V3:
+        case VERSION.COMPETITION: 
+            const router = new ethers.Contract(
+                addresses.fuji.router[version],
+                IArrowRouter[version],
+                wallet
+            )
+            return router
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
+    }
+    
 }
 
 /**
@@ -267,12 +304,19 @@ export async function getStablecoinContract(
     wallet: ethers.providers.Provider | ethers.Wallet | ethers.Signer = providers.fuji,
     version: VERSION = VERSION.V2
 ) {
-    const stablecoin = new ethers.Contract(
-        await getRouterContract(wallet, version).getStablecoinAddress(),
-        IERC20Metadata,
-        wallet
-    )
-    return stablecoin
+    switch(version) {
+        case VERSION.V2:
+        case VERSION.V3:
+        case VERSION.COMPETITION: 
+            const stablecoin = new ethers.Contract(
+                await getRouterContract(wallet, version).getStablecoinAddress(),
+                IERC20Metadata,
+                wallet
+            )
+            return stablecoin
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
+    }    
 }
 
 /**
@@ -286,12 +330,19 @@ export async function getEventsContract(
     wallet: ethers.providers.Provider | ethers.Wallet | ethers.Signer = providers.fuji,
     version: VERSION = VERSION.V2
 ) {
-    const events = new ethers.Contract(
-        await getRouterContract(wallet, version).getEventsAddress(),
-        IArrowEvents[version],
-        wallet
-    )
-    return events
+    switch(version) {
+        case VERSION.V2:
+        case VERSION.V3:
+        case VERSION.COMPETITION: 
+            const events = new ethers.Contract(
+                await getRouterContract(wallet, version).getEventsAddress(),
+                IArrowEvents[version],
+                wallet
+            )
+            return events
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
+    }
 }
 
 /**
@@ -305,12 +356,19 @@ export async function getRegistryContract(
     wallet: ethers.providers.Provider | ethers.Wallet | ethers.Signer = providers.fuji,
     version: VERSION = VERSION.V2
 ) {
-    const registry = new ethers.Contract(
-        await getRouterContract(wallet, version).getRegistryAddress(),
-        IArrowRegistry[version],
-        wallet
-    )
-    return registry
+    switch(version) {
+        case VERSION.V2:
+        case VERSION.V3:
+        case VERSION.COMPETITION: 
+            const registry = new ethers.Contract(
+                await getRouterContract(wallet, version).getRegistryAddress(),
+                IArrowRegistry[version],
+                wallet
+            )
+            return registry
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
+    }
 }
 
 /****************************************
@@ -393,13 +451,15 @@ export async function computeOptionChainAddress(
 
     let optionChainFactoryAddress = undefined
     switch(version) {
-        case VERSION.V2: {
-            optionChainFactoryAddress = await router.getChainFactoryAddress()       
-        }
+        case VERSION.V2: 
+            optionChainFactoryAddress = await router.getChainFactoryAddress()
+            break
         case VERSION.V3:
-        case VERSION.COMPETITION: {
+        case VERSION.COMPETITION: 
             optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
-        }
+            break
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
     }
 
     // Build salt for CREATE2
@@ -442,18 +502,20 @@ export async function prepareDeliverOptionParams(
     let strikeType = undefined
 
     switch(version) {
-        case VERSION.V2: {
+        case VERSION.V2: 
             formattedStrike = (optionOrderParams.strike as number).toFixed(2)
             bigNumberStrike = ethers.utils.parseUnits(formattedStrike, stablecoinDecimals)
             strikeType = 'uint256'
-        }
+            break
         case VERSION.V3:
-        case VERSION.COMPETITION: {
+        case VERSION.COMPETITION: 
             const strikes = (optionOrderParams.strike as number[]).map(strike => strike.toFixed(2))
             bigNumberStrike = strikes.map(strike => ethers.utils.parseUnits(strike, stablecoinDecimals))
             formattedStrike = strikes.join('|')
             strikeType = 'uint256[2]'
-        }
+            break
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
     }
 
     // Hash and sign the option order parameters for on-chain verification
@@ -521,23 +583,25 @@ export async function settleOptions(
     const router = getRouterContract(wallet, version)
 
     switch(version) {
-        case VERSION.V2: {
+        case VERSION.V2: 
             try {
                 await router.callStatic.settleOption(ticker, readableExpiration)
                 await router.settleOption(ticker, readableExpiration)
             } catch(err) {
                 throw new Error("Settlement call would fail on chain.")
             }    
-        }
+            break
         case VERSION.V3:
-        case VERSION.COMPETITION: {
+        case VERSION.COMPETITION: 
             try {
                 await router.callStatic.settleOptions(owner, ticker, readableExpiration)
                 await router.settleOptions(owner, ticker, readableExpiration)
             } catch(err) {
                 throw new Error("Settlement call would fail on chain.")
             }
-        }
+            break
+        default:
+            throw UNSUPPORTED_VERSION_ERROR
     }
 }
 
