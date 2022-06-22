@@ -119,13 +119,13 @@ export async function estimateOptionPrice(option: Option, version: VERSION = VER
     switch(version) {
         case VERSION.V2: 
             strike = option.strike
-            break;
+            break
         case VERSION.V3:
         case VERSION.COMPETITION: 
             strike = (option.strike as number[]).join('|')    
-            break;
+            break
         default:
-            throw UNSUPPORTED_VERSION_ERROR;
+            throw UNSUPPORTED_VERSION_ERROR
     }
 
     const estimatedOptionPriceReponse = await axios.post(
@@ -397,14 +397,14 @@ export async function computeOptionChainAddress(
     let optionChainFactoryAddress = undefined
     switch(version) {
         case VERSION.V2: 
-            optionChainFactoryAddress = await router.getChainFactoryAddress();
-            break;
+            optionChainFactoryAddress = await router.getChainFactoryAddress()
+            break
         case VERSION.V3:
         case VERSION.COMPETITION: 
             optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
-            break;
+            break
         default:
-            throw UNSUPPORTED_VERSION_ERROR;
+            throw UNSUPPORTED_VERSION_ERROR
     }
 
     // Build salt for CREATE2
@@ -451,16 +451,16 @@ export async function prepareDeliverOptionParams(
             formattedStrike = (optionOrderParams.strike as number).toFixed(2)
             bigNumberStrike = ethers.utils.parseUnits(formattedStrike, stablecoinDecimals)
             strikeType = 'uint256'
-            break;
+            break
         case VERSION.V3:
         case VERSION.COMPETITION: 
             const strikes = (optionOrderParams.strike as number[]).map(strike => strike.toFixed(2))
             bigNumberStrike = strikes.map(strike => ethers.utils.parseUnits(strike, stablecoinDecimals))
             formattedStrike = strikes.join('|')
             strikeType = 'uint256[2]'
-            break;
+            break
         default:
-            throw UNSUPPORTED_VERSION_ERROR;
+            throw UNSUPPORTED_VERSION_ERROR
     }
 
     // Hash and sign the option order parameters for on-chain verification
@@ -535,7 +535,7 @@ export async function settleOptions(
             } catch(err) {
                 throw new Error("Settlement call would fail on chain.")
             }    
-            break;
+            break
         case VERSION.V3:
         case VERSION.COMPETITION: 
             try {
@@ -544,9 +544,9 @@ export async function settleOptions(
             } catch(err) {
                 throw new Error("Settlement call would fail on chain.")
             }
-            break;
+            break
         default:
-            throw UNSUPPORTED_VERSION_ERROR;
+            throw UNSUPPORTED_VERSION_ERROR
     }
 }
 
