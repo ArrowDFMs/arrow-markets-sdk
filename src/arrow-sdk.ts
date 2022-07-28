@@ -34,13 +34,40 @@ export interface Option {
     greeks?: Greeks;
 }
 
+export interface ModifyOption {
+    ticker?: string;
+    expiration?: string;
+    strike?: number | number[];
+    contractType?: number;
+    quantity?: number;
+    price?: number;
+    underlierPriceHistory?: number[];
+    greeks?: Greeks;
+}
+
 export interface OptionOrderParams extends Option {
     buyFlag: boolean;
     limitFlag: boolean;
     thresholdPrice: number;
 }
 
+export interface ModifyOptionOrderParams extends ModifyOption {
+    buyFlag?: boolean;
+    limitFlag?: boolean;
+    thresholdPrice?: number;
+}
+
 export interface DeliverOptionParams extends OptionOrderParams {
+    hashedValues: string;
+    signature: string;
+    amountToApprove: ethers.BigNumber;
+    unixExpiration: number;
+    formattedStrike: string;
+    bigNumberStrike: ethers.BigNumber | ethers.BigNumber[];
+    bigNumberThresholdPrice: ethers.BigNumber;
+}
+
+export interface ModifyDeliverOptionParams extends ModifyOptionOrderParams {
     hashedValues: string;
     signature: string;
     amountToApprove: ethers.BigNumber;
@@ -351,6 +378,46 @@ export async function getLimitOrdersByUser(
     return getLimitOrderByUserAndIdResponse    
 }
 
+/**
+ * Get an active limit order by user address and order id 
+ * 
+ * @param user_address The wallet address of the user 
+ * @param order_id The unique identifier of the option order
+ * @returns A Limit Order Object.
+ */
+
+
+ /**
+ * Submit a Modify option limit order request to the API
+ * 
+ * @param order_id The unique order id of the order to modify
+ * @param modifyDeliverOptionParams ModifyDeliverOptionParams That contains the non null parameters to update 
+ * @returns The modified order id and the new limit order
+ */
+export async function modifyLimitOrder(order_id: string, modifyDeliverOptionParams: ModifyDeliverOptionParams, version: VERSION = VERSION.V2) {
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+
+    // Submit option order through API
+    const modifyLimitOrderResponse = await axios.post(
+        urls.api[version] + '/modify-order',
+        {
+            order_id: order_id,
+            buy_flag: modifyDeliverOptionParams.buyFlag,
+            limit_flag: modifyDeliverOptionParams.limitFlag,
+            ticker: modifyDeliverOptionParams.ticker,
+            expiration: modifyDeliverOptionParams.expiration, // readableExpiration
+            strike: modifyDeliverOptionParams.formattedStrike,
+            contract_type: modifyDeliverOptionParams.contractType,
+            quantity: modifyDeliverOptionParams.quantity,
+            threshold_price: modifyDeliverOptionParams.bigNumberThresholdPrice.toString(),
+            hashed_params: modifyDeliverOptionParams.hashedValues,
+            signature: modifyDeliverOptionParams.signature
+        }
+    )
+    // Return all data from response
+    return modifyLimitOrderResponse.data
+}
+
 /***************************************
  *      CONTRACT GETTER FUNCTIONS      *
  ***************************************/
@@ -566,6 +633,81 @@ export async function computeOptionChainAddress(
  */
 export async function prepareDeliverOptionParams(
     optionOrderParams: OptionOrderParams,
+    wallet: ethers.Wallet | ethers.Signer,
+    version: VERSION = VERSION.V2
+): Promise<DeliverOptionParams> {
+    // Get stablecoin decimals
+    const stablecoinDecimals = await (await getStablecoinContract(wallet, version)).decimals()
+
+    // Define vars
+    const thresholdPrice = ethers.utils.parseUnits(optionOrderParams.thresholdPrice.toString(), stablecoinDecimals)
+    const unixExpiration = getExpirationTimestamp(optionOrderParams.expiration).unixTimestamp
+    let bigNumberStrike = undefined
+    let formattedStrike = undefined
+    let strikeType = undefined
+
+    switch(version) {
+        case VERSION.V2: 
+            formattedStrike = (optionOrderParams.strike as number).toFixed(2)
+            bigNumberStrike = ethers.utils.parseUnits(formattedStrike, stablecoinDecimals)
+            strikeType = 'uint256'
+            break
+        case VERSION.V3:
+        case VERSION.COMPETITION: 
+            const strikes = (optionOrderParams.strike as number[]).map(strike => strike.toFixed(2))
+            bigNumberStrike = strikes.map(strike => ethers.utils.parseUnits(strike, stablecoinDecimals))
+            formattedStrike = strikes.join('|')
+            strikeType = 'uint256[2]'
+            break
+        default:
+            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getStablecoinContract`
+    }
+
+    // Hash and sign the option order parameters for on-chain verification
+    const hashedValues = ethers.utils.solidityKeccak256(
+        [
+            'bool', // buy_flag - Boolean to indicate whether this is a buy (true) or sell (false).
+            'string', // ticker - String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+            'uint256', // expiration - Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
+            'uint256', // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+            strikeType, // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
+            'string', // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
+            'uint256', // contract_type - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+            'uint256', // quantity - Number of contracts desired in the order.
+            'uint256' // threshold_price - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+        ],
+        [
+            optionOrderParams.buyFlag,
+            optionOrderParams.ticker,
+            unixExpiration,
+            optionOrderParams.expiration,
+            bigNumberStrike,
+            formattedStrike,
+            optionOrderParams.contractType,
+            optionOrderParams.quantity!,
+            thresholdPrice
+        ]
+    )
+    const signature = await wallet.signMessage(ethers.utils.arrayify(hashedValues)) // Note that we are signing a message, not a transaction
+
+    // Calculate amount to approve for this order (total = thresholdPrice * quantity)
+    const amountToApprove = ethers.BigNumber.from(thresholdPrice).mul(optionOrderParams.quantity!)
+
+    return {
+        hashedValues,
+        signature,
+        amountToApprove,
+        ...optionOrderParams,
+        unixExpiration,
+        formattedStrike,
+        bigNumberStrike,
+        bigNumberThresholdPrice: thresholdPrice
+    }
+}
+
+export async function prepareModifyOrderParams(
+    option_id: string,
+    optionOrderParams: ModifyOptionOrderParams,
     wallet: ethers.Wallet | ethers.Signer,
     version: VERSION = VERSION.V2
 ): Promise<DeliverOptionParams> {
