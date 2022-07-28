@@ -297,6 +297,35 @@ export async function getLimitOrdersByUser(
     return getBuyLimitOrdersResponse    
 }
 
+/**
+ * Get all of the active sell limit orders of the given option chain 
+ * 
+ * @param ticker The ticker of the option
+ * @param readableExpiration The readable expiration of the option
+ * @param contractType The contract type of the option. Ex. 0 = Call 1 = Put
+ * @param formattedStrike The strike price of the option
+ * @returns Array of Limit Order Objects.
+ */
+ export async function getSellLimitOrders(
+    ticker: string, 
+    readableExpiration: string,
+    contractType: number,
+    formattedStrike: string,
+    version: VERSION = VERSION.V2
+) {
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+
+    // TODO handle if contract type is a spread?
+    const getSellLimitOrdersResponse = await axios.get(
+        urls.api[version] + `get-sell-limits?ticker=${ticker}&expiration=${readableExpiration}&contract_type=${contractType == 0 ? 'CALL' : contractType == 1? 'PUT': 'SPREAD'}&strike=${formattedStrike}`
+    )
+    
+    // TODO Write a function that converts the returned value in to an array of limit order objects 
+    console.log('getSellLimitOrdersResponse', getSellLimitOrdersResponse);
+
+    return getSellLimitOrdersResponse    
+}
+
 /***************************************
  *      CONTRACT GETTER FUNCTIONS      *
  ***************************************/
