@@ -250,7 +250,7 @@ export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams
  * 
  * @param user_address Wallet address of the user
  * @param version Version of Arrow contract suite with which to interact. Default is V2.
- * @returns Array of Limit Order Strings.
+ * @returns Array of Limit Order Objects.
  */
 export async function getLimitOrdersByUser(
     user_address: string,
@@ -269,11 +269,13 @@ export async function getLimitOrdersByUser(
 }
 
 /**
- * Get all of the active limit orders of the given user 
+ * Get all of the active buy limit orders of the given option chain 
  * 
- * @param user_address Wallet address of the user
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
- * @returns Array of Limit Order Strings.
+ * @param ticker The ticker of the option
+ * @param readableExpiration The readable expiration of the option
+ * @param contractType The contract type of the option. Ex. 0 = Call 1 = Put
+ * @param formattedStrike The strike price of the option
+ * @returns Array of Limit Order Objects.
  */
  export async function getBuyLimitOrders(
     ticker: string, 
