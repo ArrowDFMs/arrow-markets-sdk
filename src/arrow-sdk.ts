@@ -292,7 +292,7 @@ export async function getLimitOrdersByUser(
     // TODO Write a function that converts the returned value in to an array of limit order objects 
     console.log('getLimitOrdersByUserResponse', getLimitOrdersByUserResponse);
 
-    return getLimitOrdersByUserResponse    
+    return getLimitOrdersByUserResponse.data    
 }
 
 /**
@@ -321,7 +321,7 @@ export async function getLimitOrdersByUser(
     // TODO Write a function that converts the returned value in to an array of limit order objects 
     console.log('getBuyLimitOrdersResponse', getBuyLimitOrdersResponse);
 
-    return getBuyLimitOrdersResponse    
+    return getBuyLimitOrdersResponse.data    
 }
 
 /**
@@ -350,7 +350,7 @@ export async function getLimitOrdersByUser(
     // TODO Write a function that converts the returned value in to an array of limit order objects 
     console.log('getSellLimitOrdersResponse', getSellLimitOrdersResponse);
 
-    return getSellLimitOrdersResponse    
+    return getSellLimitOrdersResponse.data  
 }
 
 /**
@@ -375,7 +375,7 @@ export async function getLimitOrdersByUser(
     // TODO Write a function that converts the returned value in to an array of limit order objects 
     console.log('getLimitOrderByUserAndIdResponse', getLimitOrderByUserAndIdResponse);
 
-    return getLimitOrderByUserAndIdResponse    
+    return getLimitOrderByUserAndIdResponse.data    
 }
 
 /**
