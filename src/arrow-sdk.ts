@@ -268,6 +268,33 @@ export async function getLimitOrdersByUser(
     return getLimitOrdersByUserResponse    
 }
 
+/**
+ * Get all of the active limit orders of the given user 
+ * 
+ * @param user_address Wallet address of the user
+ * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @returns Array of Limit Order Strings.
+ */
+ export async function getBuyLimitOrders(
+    ticker: string, 
+    readableExpiration: string,
+    contractType: number,
+    formattedStrike: string,
+    version: VERSION = VERSION.V2
+) {
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+
+    // TODO handle if contract type is a spread?
+    const getBuyLimitOrdersResponse = await axios.get(
+        urls.api[version] + `get-buy-limits?ticker=${ticker}&expiration=${readableExpiration}&contract_type=${contractType == 0 ? 'CALL' : contractType == 1? 'PUT': 'SPREAD'}&strike=${formattedStrike}`
+    )
+    
+    // TODO Write a function that converts the returned value in to an array of limit order objects 
+    console.log('getBuyLimitOrdersResponse', getBuyLimitOrdersResponse);
+
+    return getBuyLimitOrdersResponse    
+}
+
 /***************************************
  *      CONTRACT GETTER FUNCTIONS      *
  ***************************************/
