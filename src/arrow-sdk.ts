@@ -178,6 +178,36 @@ export async function getRecommendedOption(
 }
 
 /**
+ * Submit an option order to the API to compute the live price and submit a transaction to the blockchain.
+ * 
+ * @param deliverOptionParams Object containing parameters necessary to create an option order on Arrow.
+ * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
+ */
+export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams, version: VERSION = VERSION.V2) {
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+
+    // Submit option order through API
+    const orderSubmissionResponse = await axios.post(
+        urls.api[version] + '/submit-order',
+        {
+            buy_flag: deliverOptionParams.buyFlag,
+            limit_flag: deliverOptionParams.limitFlag,
+            ticker: deliverOptionParams.ticker,
+            expiration: deliverOptionParams.expiration, // readableExpiration
+            strike: deliverOptionParams.formattedStrike,
+            contract_type: deliverOptionParams.contractType,
+            quantity: deliverOptionParams.quantity,
+            threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+            hashed_params: deliverOptionParams.hashedValues,
+            signature: deliverOptionParams.signature
+        }
+    )
+    // Return all data from response
+    return orderSubmissionResponse.data
+}
+
+/**
  * Get a strike grid given some option parameters.
  * 
  * @param ticker Ticker of the underlying asset.
@@ -186,7 +216,7 @@ export async function getRecommendedOption(
  * @param version Version of Arrow contract suite with which to interact. Default is V2.
  * @returns Array of Option objects with optional price and greeks parameters populated.
  */
-export async function getStrikeGrid(
+ export async function getStrikeGrid(
     ticker: string,
     readableExpiration: string,
     contractType: number,
@@ -216,33 +246,26 @@ export async function getStrikeGrid(
 }
 
 /**
- * Submit an option order to the API to compute the live price and submit a transaction to the blockchain.
+ * Get all of the active limit orders of the given user 
  * 
- * @param deliverOptionParams Object containing parameters necessary to create an option order on Arrow.
+ * @param user_address Wallet address of the user
  * @param version Version of Arrow contract suite with which to interact. Default is V2.
- * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
+ * @returns Array of Limit Order Strings.
  */
-export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams, version: VERSION = VERSION.V2) {
+export async function getLimitOrdersByUser(
+    user_address: string,
+    version: VERSION = VERSION.V2
+) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
-    // Submit option order through API
-    const orderSubmissionResponse = await axios.post(
-        urls.api[version] + '/submit-order',
-        {
-            buy_flag: deliverOptionParams.buyFlag,
-            limit_flag: deliverOptionParams.limitFlag,
-            ticker: deliverOptionParams.ticker,
-            expiration: deliverOptionParams.expiration, // readableExpiration
-            strike: deliverOptionParams.formattedStrike,
-            contract_type: deliverOptionParams.contractType,
-            quantity: deliverOptionParams.quantity,
-            threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
-            hashed_params: deliverOptionParams.hashedValues,
-            signature: deliverOptionParams.signature
-        }
+    const getLimitOrdersByUserResponse = await axios.get(
+        urls.api[version] + `/limit-orders?user_address=${user_address}`
     )
-    // Return all data from response
-    return orderSubmissionResponse.data
+    
+    // TODO Write a function that converts the returned value in to an array of limit order objects 
+    console.log('getLimitOrdersByUserResponse', getLimitOrdersByUserResponse);
+
+    return getLimitOrdersByUserResponse    
 }
 
 /***************************************
