@@ -36,6 +36,7 @@ export interface Option {
 
 export interface OptionOrderParams extends Option {
     buyFlag: boolean;
+    limitFlag: boolean;
     thresholdPrice: number;
 }
 
@@ -229,6 +230,7 @@ export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams
         urls.api[version] + '/submit-order',
         {
             buy_flag: deliverOptionParams.buyFlag,
+            limit_flag: deliverOptionParams.limitFlag,
             ticker: deliverOptionParams.ticker,
             expiration: deliverOptionParams.expiration, // readableExpiration
             strike: deliverOptionParams.formattedStrike,
