@@ -326,6 +326,31 @@ export async function getLimitOrdersByUser(
     return getSellLimitOrdersResponse    
 }
 
+/**
+ * Get an active limit order by user address and order id 
+ * 
+ * @param user_address The wallet address of the user 
+ * @param order_id The unique identifier of the option order
+ * @returns A Limit Order Object.
+ */
+ export async function getLimitOrderByUserAndId(
+    user_address: string, 
+    order_id: string,
+    version: VERSION = VERSION.V2
+) {
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+
+    // TODO handle if contract type is a spread?
+    const getLimitOrderByUserAndIdResponse = await axios.get(
+        urls.api[version] + `get-limit-order?user_address=${user_address}&order_id=${order_id}`
+    )
+    
+    // TODO Write a function that converts the returned value in to an array of limit order objects 
+    console.log('getLimitOrderByUserAndIdResponse', getLimitOrderByUserAndIdResponse);
+
+    return getLimitOrderByUserAndIdResponse    
+}
+
 /***************************************
  *      CONTRACT GETTER FUNCTIONS      *
  ***************************************/
