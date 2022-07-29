@@ -310,8 +310,6 @@ export async function getLimitOrdersByUser(
     )
     
     // TODO Write a function that converts the returned value in to an array of limit order objects 
-    console.log('getLimitOrdersByUserResponse', getLimitOrdersByUserResponse);
-
     return getLimitOrdersByUserResponse.data    
 }
 
@@ -388,8 +386,6 @@ export async function getLimitOrdersByUser(
     )
     
     // TODO Write a function that converts the returned value in to an array of limit order objects 
-    console.log('getLimitOrderByUserAndIdResponse', getLimitOrderByUserAndIdResponse);
-
     return getLimitOrderByUserAndIdResponse.data    
 }
 
@@ -431,6 +427,22 @@ export async function modifyLimitOrder(order_id: string, modifyDeliverOptionPara
     )
     // Return all data from response
     return modifyLimitOrderResponse.data
+}
+type Keys = keyof ModifyOptionOrderParams
+
+export async function prepareOrderModificationParams(
+    userAddress: string,
+    orderId: string,
+    newOrder: ModifyOptionOrderParams,
+    version: VERSION
+): Promise<OptionOrderParams> {
+    const getLimitOrderByUserAndIdResponse = await getLimitOrderByUserAndId(userAddress, orderId, version)
+    const currentOptionString = getLimitOrderByUserAndIdResponse[userAddress]
+    const currentOptionObject = convertStringToOption(currentOptionString)
+    const key: Keys = 'thresholdPrice'
+    newOrder[key]
+    const updatedOrder = updateLimitOrder(newOrder, currentOptionObject)
+    return currentOptionObject
 }
 
 /***************************************
@@ -524,6 +536,56 @@ export async function getRegistryContract(
 /****************************************
  *           HELPER FUNCTIONS           *
  ****************************************/
+
+/**
+ * Helper function that can be used to convert a limit order string into an order object.
+ * 
+ * @param optionString string which represents a limit option order 
+ * @returns A converted Option object
+ */
+ export function convertStringToOption(
+    optionString: string,
+) {
+    const finalObj = optionString.split(",")
+    const ticker = finalObj[0]
+    const readableExpiration = finalObj[1]
+    const contractType = finalObj[2]
+    const strike = finalObj[3]
+    const thresholdPrice = finalObj[4]
+    const buyFlag = finalObj[5]
+    const convertedOptionObj: OptionOrderParams = {
+        ticker: ticker,
+        expiration: readableExpiration,
+        strike: Number(strike),
+        contractType: (contractType === 'CALL' ? 0 : contractType === 'PUT' ? 1 : contractType === 'PUT SPREAD' ? 3 : contractType === 'CALL SPREAD' ? 4 : -1),
+        price: Number(thresholdPrice),
+        buyFlag: (buyFlag === 'buy' ? true : false),
+        limitFlag: true,
+        thresholdPrice: Number(thresholdPrice)
+    }
+    return convertedOptionObj
+}
+
+
+/**
+ * Helper function updates one limit order object with the non-null values of the second
+ * 
+ * @param newOrder option order object that contains the values to update
+ * @param orderToUpdate option order object to update
+ * @returns An updated Option object
+ */
+function updateLimitOrder(newOrder: ModifyOptionOrderParams, orderToUpdate: OptionOrderParams) {
+    const keys: Array<String>  = []
+      Object.keys(newOrder).map((key) => {
+        keys.push(key)
+      });
+      let omitNull = (obj: any) => {
+        Object.keys(obj).filter(k => obj[k] === null).forEach(k => delete(obj[k]))
+        return obj
+      }
+      const result = { ...omitNull(orderToUpdate), ...omitNull(newOrder) }
+      return result
+  }
 
 /**
  * Helper function that can be used to check if a version is valid.
@@ -799,6 +861,7 @@ const arrowsdk = {
     getBuyLimitOrders, // Smoke tested - TODO remove user hashed params and signature from order object (API side)
     getLimitOrdersByUser, // Smoke tested - G2G
     cancelOptionOrder, // Smoke tested - G2G
+    prepareOrderModificationParams,
 
     // Blockchain functions
     getRouterContract,
