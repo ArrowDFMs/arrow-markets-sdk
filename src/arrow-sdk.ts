@@ -84,6 +84,7 @@ export interface ModifyDeliverOptionParams extends ModifyOptionOrderParams {
 const UNSUPPORTED_VERSION_ERROR = new Error("Please select a supported contract version.")
 
 export enum VERSION {
+    LOCAL = 'local',
     V2 = 'v2',
     V3 = 'v3',
     COMPETITION = 'competition'
@@ -92,6 +93,7 @@ export enum VERSION {
 
 export const urls: any = {
     "api": {
+        [VERSION.LOCAL]: 'http://localhost/v1',
         [VERSION.V2]: 'https://fuji-v2-api.arrow.markets/v1',
         [VERSION.V3]: 'https://fuji-v2-api.arrow.markets/v1',
         [VERSION.COMPETITION]: 'https://competition-api.arrow.markets/v1'
@@ -213,7 +215,7 @@ export async function getRecommendedOption(
  */
 export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams, version: VERSION = VERSION.V2) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
-
+   
     // Submit option order through API
     const orderSubmissionResponse = await axios.post(
         urls.api[version] + '/submit-order',
@@ -225,7 +227,7 @@ export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams
             strike: deliverOptionParams.formattedStrike,
             contract_type: deliverOptionParams.contractType,
             quantity: deliverOptionParams.quantity,
-            threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+            threshold_price: (deliverOptionParams.limitFlag ? deliverOptionParams.thresholdPrice : deliverOptionParams.bigNumberThresholdPrice.toString() ),
             hashed_params: deliverOptionParams.hashedValues,
             signature: deliverOptionParams.signature
         }
@@ -295,6 +297,7 @@ export async function getLimitOrdersByUser(
     return getLimitOrdersByUserResponse.data    
 }
 
+
 /**
  * Get all of the active buy limit orders of the given option chain 
  * 
@@ -315,13 +318,10 @@ export async function getLimitOrdersByUser(
 
     // TODO handle if contract type is a spread?
     const getBuyLimitOrdersResponse = await axios.get(
-        urls.api[version] + `get-buy-limits?ticker=${ticker}&expiration=${readableExpiration}&contract_type=${contractType == 0 ? 'CALL' : contractType == 1? 'PUT': 'SPREAD'}&strike=${formattedStrike}`
+        urls.api[version] + `/get-buy-limits?ticker=${ticker}&expiration=${readableExpiration}&contract_type=${contractType == 0 ? 'CALL' : contractType == 1? 'PUT': 'SPREAD'}&strike=${formattedStrike}`
     )
-    
-    // TODO Write a function that converts the returned value in to an array of limit order objects 
-    console.log('getBuyLimitOrdersResponse', getBuyLimitOrdersResponse);
 
-    return getBuyLimitOrdersResponse.data    
+    return getBuyLimitOrdersResponse.data.active_buy_limits    
 }
 
 /**
@@ -344,13 +344,10 @@ export async function getLimitOrdersByUser(
 
     // TODO handle if contract type is a spread?
     const getSellLimitOrdersResponse = await axios.get(
-        urls.api[version] + `get-sell-limits?ticker=${ticker}&expiration=${readableExpiration}&contract_type=${contractType == 0 ? 'CALL' : contractType == 1? 'PUT': 'SPREAD'}&strike=${formattedStrike}`
+        urls.api[version] + `/get-sell-limits?ticker=${ticker}&expiration=${readableExpiration}&contract_type=${contractType == 0 ? 'CALL' : contractType == 1? 'PUT': 'SPREAD'}&strike=${formattedStrike}`
     )
-    
-    // TODO Write a function that converts the returned value in to an array of limit order objects 
-    console.log('getSellLimitOrdersResponse', getSellLimitOrdersResponse);
 
-    return getSellLimitOrdersResponse.data  
+    return getSellLimitOrdersResponse.data.active_sell_limits 
 }
 
 /**
@@ -369,7 +366,7 @@ export async function getLimitOrdersByUser(
 
     // TODO handle if contract type is a spread?
     const getLimitOrderByUserAndIdResponse = await axios.get(
-        urls.api[version] + `get-limit-order?user_address=${user_address}&order_id=${order_id}`
+        urls.api[version] + `/get-limit-order?user_address=${user_address}&order_id=${order_id}`
     )
     
     // TODO Write a function that converts the returned value in to an array of limit order objects 
@@ -637,7 +634,8 @@ export async function prepareDeliverOptionParams(
     version: VERSION = VERSION.V2
 ): Promise<DeliverOptionParams> {
     // Get stablecoin decimals
-    const stablecoinDecimals = await (await getStablecoinContract(wallet, version)).decimals()
+    // const stablecoinDecimals = await (await getStablecoinContract(wallet, version)).decimals()
+    const stablecoinDecimals = 18
 
     // Define vars
     const thresholdPrice = ethers.utils.parseUnits(optionOrderParams.thresholdPrice.toString(), stablecoinDecimals)
@@ -647,7 +645,8 @@ export async function prepareDeliverOptionParams(
     let strikeType = undefined
 
     switch(version) {
-        case VERSION.V2: 
+        case VERSION.V2:
+        case VERSION.LOCAL: 
             formattedStrike = (optionOrderParams.strike as number).toFixed(2)
             bigNumberStrike = ethers.utils.parseUnits(formattedStrike, stablecoinDecimals)
             strikeType = 'uint256'
@@ -688,7 +687,9 @@ export async function prepareDeliverOptionParams(
             thresholdPrice
         ]
     )
+    // const hashedValues = '0x4df47a57d380bab32b97893b93345361119bf9ada5adc3753ddd4ea30950c7cf'
     const signature = await wallet.signMessage(ethers.utils.arrayify(hashedValues)) // Note that we are signing a message, not a transaction
+    // const signature = '0xe2e99241ef985a709208e31896f4412fc6d544468f08097b84159d27d51d5fbb1d3febeac628d7acdedbd5cb6e08ff808908e9e761097b3766a761dc4dcb36681b' // Note that we are signing a message, not a transaction
 
     // Calculate amount to approve for this order (total = thresholdPrice * quantity)
     const amountToApprove = ethers.BigNumber.from(thresholdPrice).mul(optionOrderParams.quantity!)
@@ -705,80 +706,6 @@ export async function prepareDeliverOptionParams(
     }
 }
 
-export async function prepareModifyOrderParams(
-    option_id: string,
-    optionOrderParams: ModifyOptionOrderParams,
-    wallet: ethers.Wallet | ethers.Signer,
-    version: VERSION = VERSION.V2
-): Promise<DeliverOptionParams> {
-    // Get stablecoin decimals
-    const stablecoinDecimals = await (await getStablecoinContract(wallet, version)).decimals()
-
-    // Define vars
-    const thresholdPrice = ethers.utils.parseUnits(optionOrderParams.thresholdPrice.toString(), stablecoinDecimals)
-    const unixExpiration = getExpirationTimestamp(optionOrderParams.expiration).unixTimestamp
-    let bigNumberStrike = undefined
-    let formattedStrike = undefined
-    let strikeType = undefined
-
-    switch(version) {
-        case VERSION.V2: 
-            formattedStrike = (optionOrderParams.strike as number).toFixed(2)
-            bigNumberStrike = ethers.utils.parseUnits(formattedStrike, stablecoinDecimals)
-            strikeType = 'uint256'
-            break
-        case VERSION.V3:
-        case VERSION.COMPETITION: 
-            const strikes = (optionOrderParams.strike as number[]).map(strike => strike.toFixed(2))
-            bigNumberStrike = strikes.map(strike => ethers.utils.parseUnits(strike, stablecoinDecimals))
-            formattedStrike = strikes.join('|')
-            strikeType = 'uint256[2]'
-            break
-        default:
-            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getStablecoinContract`
-    }
-
-    // Hash and sign the option order parameters for on-chain verification
-    const hashedValues = ethers.utils.solidityKeccak256(
-        [
-            'bool', // buy_flag - Boolean to indicate whether this is a buy (true) or sell (false).
-            'string', // ticker - String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
-            'uint256', // expiration - Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
-            'uint256', // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
-            strikeType, // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
-            'string', // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
-            'uint256', // contract_type - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
-            'uint256', // quantity - Number of contracts desired in the order.
-            'uint256' // threshold_price - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
-        ],
-        [
-            optionOrderParams.buyFlag,
-            optionOrderParams.ticker,
-            unixExpiration,
-            optionOrderParams.expiration,
-            bigNumberStrike,
-            formattedStrike,
-            optionOrderParams.contractType,
-            optionOrderParams.quantity!,
-            thresholdPrice
-        ]
-    )
-    const signature = await wallet.signMessage(ethers.utils.arrayify(hashedValues)) // Note that we are signing a message, not a transaction
-
-    // Calculate amount to approve for this order (total = thresholdPrice * quantity)
-    const amountToApprove = ethers.BigNumber.from(thresholdPrice).mul(optionOrderParams.quantity!)
-
-    return {
-        hashedValues,
-        signature,
-        amountToApprove,
-        ...optionOrderParams,
-        unixExpiration,
-        formattedStrike,
-        bigNumberStrike,
-        bigNumberThresholdPrice: thresholdPrice
-    }
-}
 
 /***************************************
  *       CONTRACT FUNCTION CALLS       *
@@ -847,7 +774,12 @@ const arrowsdk = {
     estimateOptionPrice,
     getRecommendedOption,
     getStrikeGrid,
-    submitOptionOrder,
+    submitOptionOrder, // Smoke tested 
+    modifyLimitOrder, //WIP
+    getLimitOrderByUserAndId, // smoke tested - G2G
+    getSellLimitOrders, // Smoke tested - TODO remove user hashed params and signature from order object (API side)
+    getBuyLimitOrders, // Smoke tested - TODO remove user hashed params and signature from order object (API side)
+    getLimitOrdersByUser, // smoke tested - G2G
 
     // Blockchain functions
     getRouterContract,
