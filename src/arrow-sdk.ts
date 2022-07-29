@@ -247,7 +247,7 @@ export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
    
     // Cancel option order through API
-    const cancelOrderResponse = await axios.get(
+    const cancelOrderResponse = await axios.delete(
         urls.api[version] + `/cancel-order?user_address=${userAddress}&order_id=${orderId}`
     )
     // Return all data from response
@@ -797,7 +797,8 @@ const arrowsdk = {
     getLimitOrderByUserAndId, // smoke tested - G2G
     getSellLimitOrders, // Smoke tested - TODO remove user hashed params and signature from order object (API side)
     getBuyLimitOrders, // Smoke tested - TODO remove user hashed params and signature from order object (API side)
-    getLimitOrdersByUser, // smoke tested - G2G
+    getLimitOrdersByUser, // Smoke tested - G2G
+    cancelOptionOrder, // Smoke tested - G2G
 
     // Blockchain functions
     getRouterContract,
