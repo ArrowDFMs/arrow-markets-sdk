@@ -237,6 +237,24 @@ export async function submitOptionOrder(deliverOptionParams: DeliverOptionParams
 }
 
 /**
+ * Submit an option order to the API to compute the live price and submit a transaction to the blockchain.
+ * 
+ * @param deliverOptionParams Object containing parameters necessary to create an option order on Arrow.
+ * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
+ */
+ export async function cancelOptionOrder(userAddress: string, orderId: string, version: VERSION = VERSION.V2) {
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+   
+    // Cancel option order through API
+    const cancelOrderResponse = await axios.get(
+        urls.api[version] + `/cancel-order?user_address=${userAddress}&order_id=${orderId}`
+    )
+    // Return all data from response
+    return cancelOrderResponse.data
+}
+
+/**
  * Get a strike grid given some option parameters.
  * 
  * @param ticker Ticker of the underlying asset.
