@@ -196,7 +196,7 @@ export async function modifyLimitOrder(order_id: string, modifyDeliverOptionPara
             strike: modifyDeliverOptionParams.formattedStrike,
             contract_type: modifyDeliverOptionParams.contractType,
             quantity: modifyDeliverOptionParams.quantity,
-            threshold_price: modifyDeliverOptionParams.bigNumberThresholdPrice.toString(),
+            threshold_price: modifyDeliverOptionParams.thresholdPrice!,
             hashed_params: modifyDeliverOptionParams.hashedValues,
             signature: modifyDeliverOptionParams.signature
         }
@@ -204,8 +204,6 @@ export async function modifyLimitOrder(order_id: string, modifyDeliverOptionPara
     // Return all data from response
     return modifyLimitOrderResponse.data
 }
-
-
 
 /**************************************
  *           DEFAULT EXPORT           *
@@ -223,7 +221,7 @@ const arrowsdk = {
     getRecommendedOption,
     getStrikeGrid,
     submitOptionOrder, // Smoke tested 
-    modifyLimitOrder, //WIP
+    modifyLimitOrder, //WIP - Smoke testing
     cancelOptionOrder, // Smoke tested - G2G
 
     // Blockchain functions
