@@ -277,7 +277,9 @@ export async function prepareOrderModificationParams(
     console.log('newOrder', newOrder, 'currentOptionObject', currentOptionObject)
 
     // Define vars
-    const thresholdPrice = ethers.utils.parseUnits(updatedOderObject.thresholdPrice.toString(), stablecoinDecimals)
+    const bigNumberThresholdPrice = ethers.utils.parseUnits(updatedOderObject.thresholdPrice.toString(), stablecoinDecimals)
+    const thresholdPrice = updatedOderObject.thresholdPrice
+    console.log('thresholdPrice in sdk is', thresholdPrice)
     
     const unixExpiration = getExpirationTimestamp(updatedOderObject.expiration).unixTimestamp
     let bigNumberStrike = undefined
@@ -332,17 +334,19 @@ export async function prepareOrderModificationParams(
     const signature = '0xe2e99241ef985a709208e31896f4412fc6d544468f08097b84159d27d51d5fbb1d3febeac628d7acdedbd5cb6e08ff808908e9e761097b3766a761dc4dcb36681b' // Note that we are signing a message, not a transaction
 
     // Calculate amount to approve for this order (total = thresholdPrice * quantity)
-    
-    const amountToApprove = ethers.BigNumber.from(thresholdPrice).mul(updatedOderObject.quantity!)
+    console.log('updatedOderObject',updatedOderObject)
+    const amountToApprove = ethers.BigNumber.from(bigNumberThresholdPrice).mul(updatedOderObject.quantity!)
     return {
+        orderId,
         hashedValues,
         signature,
         amountToApprove,
         ...updatedOderObject,
+        thresholdPrice,
         unixExpiration,
         formattedStrike,
         bigNumberStrike,
-        bigNumberThresholdPrice: thresholdPrice
+        bigNumberThresholdPrice: bigNumberThresholdPrice
     }
 }
 

@@ -27,7 +27,6 @@ export interface ModifyOption {
     strike?: number | number[];
     contractType?: number;
     quantity?: number;
-    price?: number;
     underlierPriceHistory?: number[];
     greeks?: Greeks;
 }
@@ -55,6 +54,7 @@ export interface DeliverOptionParams extends OptionOrderParams {
 }
 
 export interface ModifyDeliverOptionParams extends ModifyOptionOrderParams {
+    orderId: string,
     hashedValues: string;
     signature: string;
     amountToApprove: ethers.BigNumber;
