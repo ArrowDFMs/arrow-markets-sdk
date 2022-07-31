@@ -266,6 +266,7 @@ export async function prepareOrderModificationParams(
     userAddress: string,
     orderId: string,
     newOrder: arrow_interface.ModifyOptionOrderParams,
+    wallet: ethers.Wallet | ethers.Signer,
     version: VERSION
 ): Promise<void> {
     const getLimitOrderByUserAndIdResponse = await getLimitOrderByUserAndId(userAddress, orderId, version)
@@ -305,33 +306,31 @@ export async function prepareOrderModificationParams(
     }
 
     // Hash and sign the option order parameters for on-chain verification
-    // const hashedValues = ethers.utils.solidityKeccak256(
-    //     [
-    //         'bool', // buy_flag - Boolean to indicate whether this is a buy (true) or sell (false).
-    //         'string', // ticker - String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
-    //         'uint256', // expiration - Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
-    //         'uint256', // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
-    //         strikeType, // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
-    //         'string', // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
-    //         'uint256', // contract_type - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
-    //         'uint256', // quantity - Number of contracts desired in the order.
-    //         'uint256' // threshold_price - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
-    //     ],
-    //     [
-    //         updatedOderObject.buyFlag,
-    //         updatedOderObject.ticker,
-    //         unixExpiration,
-    //         updatedOderObject.expiration,
-    //         bigNumberStrike,
-    //         formattedStrike,
-    //         updatedOderObject.contractType,
-    //         updatedOderObject.quantity!,
-    //         thresholdPrice
-    //     ]
-    // )
-    const hashedValues = '0x4df47a57d380bab32b97893b93345361119bf9ada5adc3753ddd4ea30950c7cf'
-    // // const signature = await wallet.signMessage(ethers.utils.arrayify(hashedValues)) // Note that we are signing a message, not a transaction
-    const signature = '0xe2e99241ef985a709208e31896f4412fc6d544468f08097b84159d27d51d5fbb1d3febeac628d7acdedbd5cb6e08ff808908e9e761097b3766a761dc4dcb36681b' // Note that we are signing a message, not a transaction
+    const hashedValues = ethers.utils.solidityKeccak256(
+        [
+            'bool', // buy_flag - Boolean to indicate whether this is a buy (true) or sell (false).
+            'string', // ticker - String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+            'uint256', // expiration - Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
+            'uint256', // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+            strikeType, // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
+            'string', // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
+            'uint256', // contract_type - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+            'uint256', // quantity - Number of contracts desired in the order.
+            'uint256' // threshold_price - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+        ],
+        [
+            updatedOderObject.buyFlag,
+            updatedOderObject.ticker,
+            unixExpiration,
+            updatedOderObject.expiration,
+            bigNumberStrike,
+            formattedStrike,
+            updatedOderObject.contractType,
+            updatedOderObject.quantity!,
+            thresholdPrice
+        ]
+    )
+    const signature = await wallet.signMessage(ethers.utils.arrayify(hashedValues)) // Note that we are signing a message, not a transaction
 
     // Calculate amount to approve for this order (total = thresholdPrice * quantity)
     console.log('updatedOderObject',updatedOderObject)
