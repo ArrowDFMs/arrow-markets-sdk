@@ -4,31 +4,21 @@ require('dotenv').config()
 
 // Imports
 import axios from 'axios'
-import {
-    VERSION,
-    Option,
-    OptionOrderParams,
-    computeOptionChainAddress,
-    prepareDeliverOptionParams,
-    getStablecoinContract,
-    providers,
-    estimateOptionPrice,
-    submitOptionOrder,
-    DeliverOptionParams,
-    getCurrentTimeUTC,
-    getReadableTimestamp
-} from '../lib/src/arrow-sdk'
+import * as arrowsdk from '../lib/src/arrow-sdk'
 import { ethers } from 'ethers'
+import { DeliverOptionParams, OptionOrderParams, Option } from '../lib/src/utils/interfaces'
+import { computeOptionChainAddress, prepareDeliverOptionParams } from '../lib/src/utils/utilities'
+import { estimateOptionPrice, submitOptionOrder } from '../lib/src/arrow-sdk'
 
 // Get wallet using private key from .env file
-const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, providers.fuji)
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, arrowsdk.default.constants.providers.fuji)
 
 async function main() {
     // Specify version
-    const version = VERSION.V3
+    const version = arrowsdk.default.constants.VERSION.V3
 
     // Get stablecoin contract from Arrow
-    const stablecoin = await getStablecoinContract(wallet, version)
+    const stablecoin = await arrowsdk.default.contract.getStablecoinContract(wallet, version)
 
     // A constant indicating how many block confirmations
     // to wait after submitting transactions to the blockchain
@@ -36,14 +26,14 @@ async function main() {
 
     // Calculate a future expiration (as a UNIX timestamp)
     // expirations must always be at 9:00 PM UTC
-    const twoWeeksFromNow = getCurrentTimeUTC().momentTimestamp
+    const twoWeeksFromNow = arrowsdk.default.utilities.getCurrentTimeUTC().momentTimestamp
                                     .add(2, 'weeks')
                                     .set('hour', 21)
                                     .set('minute', 0)
                                     .set('second', 0)
                                     .unix()
     // Convert Unix timestamp to readable date string for use with Arrow
-    const readableExpiration = getReadableTimestamp(twoWeeksFromNow * 1000) // MM is month, DD is day, and YYYY is year
+    const readableExpiration = arrowsdk.default.utilities.getReadableTimestamp(twoWeeksFromNow * 1000) // MM is month, DD is day, and YYYY is year
 
     // Option order parameters
     const buyFlag = true // True if buying, false if selling
@@ -70,7 +60,8 @@ async function main() {
 
         // Below we set a threshold price for which any higher (for option buy) or lower (for option sell) price will be rejected in the option order
         // For this example, we choose to set our thresholdPrice to be equal to the estimatedOptionPrice
-        thresholdPrice: estimatedOptionPrice
+        thresholdPrice: estimatedOptionPrice,
+        limitFlag: false
     }
     const deliverOptionParams: DeliverOptionParams = await prepareDeliverOptionParams(optionOrderParams, wallet, version)
 
