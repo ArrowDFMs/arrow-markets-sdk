@@ -18,7 +18,6 @@ import axios from "axios"
  export function stringToOption(
     optionString: string,
 ) {
-    console.log('optionString', optionString)
     const finalObj = optionString.split(",")
     const ticker = finalObj[0]
     const readableExpiration = finalObj[1]
@@ -271,16 +270,13 @@ export async function prepareOrderModificationParams(
 ): Promise<void> {
     const getLimitOrderByUserAndIdResponse = await getLimitOrderByUserAndId(userAddress, orderId, version)
     const currentOptionString = getLimitOrderByUserAndIdResponse[userAddress]
-    console.log('currentOptionString', currentOptionString)
     const currentOptionObject = utilities.stringToOption(currentOptionString)
     const updatedOderObject = utilities.updateLimitOrder(newOrder, currentOptionObject)
     const stablecoinDecimals = 18
-    console.log('newOrder', newOrder, 'currentOptionObject', currentOptionObject)
 
     // Define vars
     const bigNumberThresholdPrice = ethers.utils.parseUnits(updatedOderObject.thresholdPrice.toString(), stablecoinDecimals)
     const thresholdPrice = updatedOderObject.thresholdPrice
-    console.log('thresholdPrice in sdk is', thresholdPrice)
     
     const unixExpiration = getExpirationTimestamp(updatedOderObject.expiration).unixTimestamp
     let bigNumberStrike = undefined
@@ -333,7 +329,6 @@ export async function prepareOrderModificationParams(
     const signature = await wallet.signMessage(ethers.utils.arrayify(hashedValues)) // Note that we are signing a message, not a transaction
 
     // Calculate amount to approve for this order (total = thresholdPrice * quantity)
-    console.log('updatedOderObject',updatedOderObject)
     const amountToApprove = ethers.BigNumber.from(bigNumberThresholdPrice).mul(updatedOderObject.quantity!)
     return {
         orderId,
