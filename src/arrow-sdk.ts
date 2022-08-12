@@ -352,7 +352,7 @@ function isValidVersion(version: VERSION): boolean {
  * @returns Readable timestamp in the "MMDDYYYY" format.
  */
  export function getReadableTimestamp(millisTimestamp: number) {
-    return moment(millisTimestamp).format('MMDDYYYY')
+    return moment.utc(millisTimestamp).format("MMDDYYYY");
 }
 
 /**
