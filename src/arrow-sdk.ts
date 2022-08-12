@@ -352,7 +352,15 @@ function isValidVersion(version: VERSION): boolean {
  * @returns Readable timestamp in the "MMDDYYYY" format.
  */
  export function getReadableTimestamp(millisTimestamp: number) {
-    return moment(millisTimestamp).format('MMDDYYYY')
+    const res = new Date(millisTimestamp)
+    var ar = res.toISOString().split("T")
+    var tempExpirationArray = ar[0].split('-')
+    var expirationArray = []
+    expirationArray[0] = tempExpirationArray[1] 
+    expirationArray[1] = tempExpirationArray[2] 
+    expirationArray[3] = tempExpirationArray[0] 
+    console.log("exp", expirationArray.join(""));
+    return expirationArray.join("")
 }
 
 /**
@@ -378,6 +386,7 @@ export function getCurrentTimeUTC() {
  * @returns Object that contains a moment object & unix, millisecond, and readable UTC timestamp representations of millisTimestamp.
  */
 export function getTimeUTC(millisTimestamp: number) {
+    
     const time = moment.utc(millisTimestamp)
     const utcMillisecondTimestamp = time.valueOf()
     return {
