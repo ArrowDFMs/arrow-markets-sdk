@@ -359,7 +359,6 @@ function isValidVersion(version: VERSION): boolean {
     expirationArray[0] = tempExpirationArray[1] 
     expirationArray[1] = tempExpirationArray[2] 
     expirationArray[3] = tempExpirationArray[0] 
-    console.log("exp", expirationArray.join(""));
     return expirationArray.join("")
 }
 
