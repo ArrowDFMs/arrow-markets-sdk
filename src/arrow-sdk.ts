@@ -378,7 +378,6 @@ export function getCurrentTimeUTC() {
  * @returns Object that contains a moment object & unix, millisecond, and readable UTC timestamp representations of millisTimestamp.
  */
 export function getTimeUTC(millisTimestamp: number) {
-    
     const time = moment.utc(millisTimestamp)
     const utcMillisecondTimestamp = time.valueOf()
     return {
