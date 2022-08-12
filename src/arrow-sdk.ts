@@ -384,7 +384,7 @@ export function getTimeUTC(millisTimestamp: number) {
         momentTimestamp: time,
         unixTimestamp: time.unix(),
         millisTimestamp: utcMillisecondTimestamp,
-        readableTimestamp: getReadableTimestamp(millisTimestamp)
+        readableTimestamp: getReadableTimestamp(utcMillisecondTimestamp)
     }
 }
 
