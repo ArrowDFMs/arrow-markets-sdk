@@ -267,8 +267,6 @@ export function getRouterContract(
         IArrowRouter[version],
         wallet
     )
-    console.log('version', version)
-    console.log('getRouterContract', router.address)
     return router
 }
 
@@ -422,7 +420,6 @@ export async function computeOptionChainAddress(
 ): Promise<string> {
     // Get chain factory contract address from router
     const router = getRouterContract(providers.fuji, version)
-    console.log('router', router);
 
     let optionChainFactoryAddress = undefined
     switch(version) {
@@ -432,7 +429,6 @@ export async function computeOptionChainAddress(
         case VERSION.V3:
         case VERSION.COMPETITION: 
             optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
-            console.log('optionChainFactoryAddress', optionChainFactoryAddress);
             break
         default:
             throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
