@@ -19,6 +19,7 @@ import {
     getReadableTimestamp
 } from '../lib/src/arrow-sdk'
 import { ethers } from 'ethers'
+import * as moment from "moment"
 
 // Get wallet using private key from .env file
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, providers.fuji)
@@ -35,21 +36,17 @@ async function main() {
     const numBlockConfirmations = 2
 
     // Calculate a future expiration (as a UNIX timestamp)
-    // expirations must always be at 9:00 PM UTC
-    const twoWeeksFromNow = getCurrentTimeUTC().momentTimestamp
-                                    .add(2, 'weeks')
-                                    .set('hour', 21)
-                                    .set('minute', 0)
-                                    .set('second', 0)
-                                    .unix()
-    // Convert Unix timestamp to readable date string for use with Arrow
-    const readableExpiration = "08192022"
+    // expirations must always be a Friday 
+    var resultDate = new Date();
+    var today = new Date();
+    resultDate.setDate(today.getDate() + (7 + 5 - today.getDay()) % 7);
+    const readableExpiration = moment.utc(resultDate).format('MMDDYYYY');
 
     // Option order parameters
     const buyFlag = true // True if buying, false if selling
     const option: Option = {
         "ticker": "AVAX", // Ticker for Avalanche token
-        "expiration": readableExpiration, // Two weeks from now at 9:00 PM UTC
+        "expiration": readableExpiration, // The nearest friday from today
         "strike": [87.02, 0.0], // Long strike of $87.02 (note that the ordering of the strikes in v3 is always [long, short] for spreads and always [long, 0] for naked calls/puts)
         "contractType": 1, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
         "quantity": 2, // 2 contracts
