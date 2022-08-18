@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { ethers } from 'ethers'
-import moment from 'moment'
+import * as moment from "moment"
 
 import {
     IERC20Metadata,
@@ -32,6 +32,7 @@ export interface Option {
     price?: number;
     underlierPriceHistory?: number[];
     greeks?: Greeks;
+    spotPrice?: number;
 }
 
 export interface OptionOrderParams extends Option {
@@ -137,7 +138,8 @@ export async function estimateOptionPrice(option: Option, version: VERSION = VER
             "strike": strike,
             "contract_type": option.contractType,
             "quantity": option.quantity,
-            "price_history": option.underlierPriceHistory!
+            "price_history": option.underlierPriceHistory!,
+            "spot_price": option.spotPrice!
         }
     )
     const estimatedOptionPrice = parseFloat(estimatedOptionPriceReponse.data.option_price.toFixed(6))
@@ -265,6 +267,8 @@ export function getRouterContract(
         IArrowRouter[version],
         wallet
     )
+    console.log('version', version)
+    console.log('getRouterContract', router.address)
     return router
 }
 
@@ -418,6 +422,7 @@ export async function computeOptionChainAddress(
 ): Promise<string> {
     // Get chain factory contract address from router
     const router = getRouterContract(providers.fuji, version)
+    console.log('router', router);
 
     let optionChainFactoryAddress = undefined
     switch(version) {
@@ -427,6 +432,7 @@ export async function computeOptionChainAddress(
         case VERSION.V3:
         case VERSION.COMPETITION: 
             optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
+            console.log('optionChainFactoryAddress', optionChainFactoryAddress);
             break
         default:
             throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
