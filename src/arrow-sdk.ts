@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { ethers } from 'ethers'
-import * as moment from "moment"
+import * as moment from 'moment'
 
 import {
     IERC20Metadata,

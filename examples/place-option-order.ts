@@ -19,7 +19,7 @@ import {
     getReadableTimestamp
 } from '../lib/src/arrow-sdk'
 import { ethers } from 'ethers'
-import * as moment from "moment"
+import * as moment from 'moment'
 
 // Get wallet using private key from .env file
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, providers.fuji)
