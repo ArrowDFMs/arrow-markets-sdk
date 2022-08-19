@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { ethers } from 'ethers'
-import moment from 'moment'
+import * as moment from 'moment'
 
 import {
     IERC20Metadata,
@@ -32,6 +32,7 @@ export interface Option {
     price?: number;
     underlierPriceHistory?: number[];
     greeks?: Greeks;
+    spotPrice?: number;
 }
 
 export interface OptionOrderParams extends Option {
@@ -137,7 +138,8 @@ export async function estimateOptionPrice(option: Option, version: VERSION = VER
             "strike": strike,
             "contract_type": option.contractType,
             "quantity": option.quantity,
-            "price_history": option.underlierPriceHistory!
+            "price_history": option.underlierPriceHistory!,
+            "spot_price": option.spotPrice!
         }
     )
     const estimatedOptionPrice = parseFloat(estimatedOptionPriceReponse.data.option_price.toFixed(6))
