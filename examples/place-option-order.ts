@@ -104,7 +104,6 @@ async function main() {
         }
     }
 
-    //TO-DO- Update API to ensure it is generating the correct option chain address
     // Submit order to API and get response
     const {tx_hash, execution_price} = await submitOptionOrder(deliverOptionParams, version)
 
