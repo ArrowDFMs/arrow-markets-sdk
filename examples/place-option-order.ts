@@ -47,8 +47,8 @@ async function main() {
     const option: Option = {
         "ticker": "AVAX", // Ticker for Avalanche token
         "expiration": readableExpiration, // The nearest friday from today
-        "strike": [87.02, 0.0], // Long strike of $87.02 (note that the ordering of the strikes in v3 is always [long, short] for spreads and always [long, 0] for naked calls/puts)
-        "contractType": 1, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+        "strike": [87.02, 84.0], // Long strike of $87.02 (note that the ordering of the strikes in v3 is always [long, short] for spreads and always [long, 0] for naked calls/puts)
+        "contractType": 3, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
         "quantity": 2, // 2 contracts
     }
 
