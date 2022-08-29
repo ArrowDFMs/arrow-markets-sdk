@@ -65,7 +65,7 @@ export enum VERSION {
 export const urls: any = {
   api: {
     [VERSION.V2]: "https://fuji-v2-api.arrow.markets/v1",
-    [VERSION.V3]: "http://localhost/v1",
+    [VERSION.V3]: "https://fuji-v2-api.arrow.markets/v1",
     [VERSION.COMPETITION]: "https://competition-api.arrow.markets/v1",
   },
   provider: {
