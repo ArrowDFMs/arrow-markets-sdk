@@ -65,7 +65,7 @@ export enum VERSION {
 export const urls: any = {
   api: {
     [VERSION.V2]: "https://fuji-v2-api.arrow.markets/v1",
-    [VERSION.V3]: "https://fuji-v2-api.arrow.markets/v1",
+    [VERSION.V3]: "http://localhost/v1",
     [VERSION.COMPETITION]: "https://competition-api.arrow.markets/v1",
   },
   provider: {
@@ -153,9 +153,13 @@ export async function estimateOptionPrice(
   const estimatedOptionPrice = parseFloat(
     estimatedOptionPriceResponse.data.option_price.toFixed(6)
   );
-  const greeks: Greeks = estimatedOptionPriceResponse.data.greeks;
 
-  return { estimatedOptionPrice, greeks };
+  if (version === VERSION.V3) {
+    const greeks: Greeks = estimatedOptionPriceResponse.data.greeks;
+    return { estimatedOptionPrice, greeks };
+  }
+
+  return estimatedOptionPrice;
 }
 
 /**
