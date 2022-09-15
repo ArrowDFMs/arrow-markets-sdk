@@ -1,6 +1,7 @@
 import axios from "axios";
 import { ethers } from "ethers";
 import * as moment from "moment";
+// import moment from "moment";
 
 import {
   IERC20Metadata,
@@ -24,6 +25,7 @@ export interface Greeks {
 }
 
 export interface Option {
+  order_type?: number;
   ticker: string;
   expiration: string;
   strike: number | number[];
@@ -36,7 +38,7 @@ export interface Option {
 }
 
 export interface OptionOrderParams extends Option {
-  buyFlag: boolean;
+  order_type: number;
   thresholdPrice: number;
 }
 
@@ -48,6 +50,26 @@ export interface DeliverOptionParams extends OptionOrderParams {
   formattedStrike: string;
   bigNumberStrike: ethers.BigNumber | ethers.BigNumber[];
   bigNumberThresholdPrice: ethers.BigNumber;
+}
+
+export interface GetUnderlierHistoricalPricesRequest {
+  vs_currency: "usd" | "eur";
+  days?: number;
+  interval?: "daily";
+}
+
+export interface GetUnderlierHistoricalPricesRequest {
+  vs_currency: "usd" | "eur";
+  days?: number;
+  from?: number;
+  to?: number;
+  interval?: "daily";
+}
+
+export interface GetUnderlierHistoricalPricesResponse {
+  market_caps: number[][];
+  prices: number[][];
+  total_volumes: number[][];
 }
 
 /**************************************
@@ -144,16 +166,20 @@ export async function estimateOptionPrice(
       throw UNSUPPORTED_VERSION_ERROR;
   }
 
+  const { priceHistory: price_history, currentPrice } =
+    await getUnderlierPriceAndHistory(option.ticker);
+
   const estimatedOptionPriceResponse = await axios.post(
     urls.api[version] + "/estimate-option-price",
     {
+      order_type: option.order_type,
       ticker: option.ticker,
       expiration: option.expiration, // API only takes in readable expirations so it can manually set the expiration at 9:00 PM UTC
       strike: strike,
       contract_type: option.contractType,
       quantity: option.quantity,
-      price_history: option.underlierPriceHistory!,
-      spot_price: option.spotPrice!,
+      price_history: price_history,
+      spot_price: currentPrice,
     }
   );
   const estimatedOptionPrice = parseFloat(
@@ -168,57 +194,84 @@ export async function estimateOptionPrice(
  * Get a recommended option from our server given some option parameters and a price forecast.
  *
  * @param ticker Ticker of the underlying asset.
- * @param readableExpiration Readable timestamp in the 'MMDDYYYY' format.
+ * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
  * @param forecast Forecasted price of underlying asset.
  * @param version Version of Arrow contract suite with which to interact. Default is V2.
  * @returns Option object with optional price and greeks parameters populated.
  */
+
 export async function getRecommendedOption(
   ticker: string,
   readableExpiration: string,
   forecast: number,
   version: VERSION = VERSION.V2
 ) {
-  if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
-
-  const recommendedOptionResponse = await axios.get(
-    urls.api[version] +
-      `/get-recommended-strike?expiration=${readableExpiration}&forecast=${forecast}&ticker=${ticker}`
+  const { currentPrice, priceHistory } = await getUnderlierPriceAndHistory(
+    ticker
   );
 
-  const recommendedOption: Option = {
-    ticker: ticker,
-    expiration: readableExpiration,
-    strike: recommendedOptionResponse.data.strike,
-    contractType: recommendedOptionResponse.data.contract_type,
-    price: recommendedOptionResponse.data.option_price,
-    greeks: recommendedOptionResponse.data.greeks,
-  };
-  return recommendedOption;
+  if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
+
+  try {
+    const recommendedOptionResponse = await axios.post(
+      urls.api[version] + "/get-recommended-option",
+      {
+        ticker: ticker,
+        expiration: readableExpiration,
+        forecast: forecast,
+        spot_price: currentPrice,
+        price_history: priceHistory,
+      }
+    );
+
+    const recommendedOption: Option = {
+      ticker: ticker,
+      expiration: readableExpiration,
+      strike: recommendedOptionResponse.data.option.strike,
+      contractType: recommendedOptionResponse.data.option.contract_type,
+      price: recommendedOptionResponse.data.option.price,
+      greeks: recommendedOptionResponse.data.option.greeks,
+    };
+
+    return recommendedOption;
+  } catch (error) {
+    throw error;
+  }
 }
 
 /**
  * Get a strike grid given some option parameters.
  *
  * @param ticker Ticker of the underlying asset.
- * @param readableExpiration Readable timestamp in the 'MMDDYYYY' format.
+ * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
  * @param contractType // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
  * @param version Version of Arrow contract suite with which to interact. Default is V2.
  * @returns Array of Option objects with optional price and greeks parameters populated.
  */
 export async function getStrikeGrid(
+  order_type: number,
   ticker: string,
   readableExpiration: string,
   contractType: number,
   version: VERSION = VERSION.V2
 ) {
+  //TO DO Get HISTORICAL PRICE IF PRICE HISTORY IS NULL
+  const { currentPrice, priceHistory } = await getUnderlierPriceAndHistory(
+    ticker
+  );
   if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
 
-  const strikeGridResponse = await axios.get(
-    urls.api[version] +
-      `/get-strike-grid?ticker=${ticker}&expiration=${readableExpiration}&contract_type=${contractType}`
+  const strikeGridResponse = await axios.post(
+    urls.api[version] + "/get-strike-grid",
+    {
+      order_type: order_type,
+      ticker: ticker,
+      expiration: readableExpiration,
+      contract_type: contractType,
+      price_history: priceHistory,
+      spot_price: currentPrice,
+    }
   );
-
   const strikeGrid = [];
   for (let i = 0; i < strikeGridResponse.data.options.length; i++) {
     const strikeGridOption = strikeGridResponse.data.options[i];
@@ -253,7 +306,7 @@ export async function submitOptionOrder(
   const orderSubmissionResponse = await axios.post(
     urls.api[version] + "/submit-order",
     {
-      buy_flag: deliverOptionParams.buyFlag,
+      order_type: deliverOptionParams.order_type,
       ticker: deliverOptionParams.ticker,
       expiration: deliverOptionParams.expiration, // readableExpiration
       strike: deliverOptionParams.formattedStrike,
@@ -372,6 +425,37 @@ export async function getRegistryContract(
  *           HELPER FUNCTIONS           *
  ****************************************/
 
+export async function getUnderlierPriceAndHistory(ticker: string) {
+  try {
+    const days = 84;
+    const underlierId = getUnderlierId(ticker);
+    const {
+      data: { market_caps, prices },
+    } = await axios.get<GetUnderlierHistoricalPricesResponse>(
+      `https://api.coingecko.com/api/v3/coins/${underlierId}/market_chart`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        params: {
+          days,
+          vs_currency: "usd",
+        },
+      }
+    );
+    const priceHistory = prices.map((entry) => entry[1]);
+    const currentPrice = priceHistory[priceHistory.length - 1];
+
+    return {
+      priceHistory: priceHistory,
+      currentPrice: currentPrice,
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
 /**
  * Helper function that can be used to check if a version is valid.
  *
@@ -382,11 +466,24 @@ function isValidVersion(version: VERSION): boolean {
   return Object.values(VERSION).includes(version);
 }
 
+export const getUnderlierId = (ticker: string) => {
+  switch (ticker) {
+    case "AVAX":
+      return "avalanche-2";
+    case "ETH":
+      return "ethereum";
+    case "BTC":
+      return "bitcoin";
+    case "LINK":
+      return "chainlink";
+  }
+};
+
 /**
  * Get readable timestamp from millisecond timestamp.
  *
  * @param millisTimestamp Millisecond timestamp. For example, 1654848000000 for Jun 10 2022 08:00:00
- * @returns Readable timestamp in the 'MMDDYYYY' format.
+ * @returns Readable timestamp in the "MMDDYYYY" format.
  */
 export function getReadableTimestamp(millisTimestamp: number) {
   return moment.utc(millisTimestamp).format("MMDDYYYY");
@@ -428,7 +525,7 @@ export function getTimeUTC(millisTimestamp: number) {
 /**
  * Get unix and millisecond timestamps from readable expiration. This works for any readable timestamp, not just expirations.
  *
- * @param readableExpiration Readable timestamp in the 'MMDDYYYY' format.
+ * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
  * @returns Object that contains a moment object & unix and millisecond timestamp representations of the readable timestamp.
  */
 export function getExpirationTimestamp(readableExpiration: string) {
@@ -459,7 +556,7 @@ export function isFriday(unixExpiration: number) {
  * Compute address of on-chain option chain contract using CREATE2 functionality.
  *
  * @param ticker Ticker of the underlying asset.
- * @param readableExpiration Readable expiration in the 'MMDDYYYY' format.
+ * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
  * @param version Version of Arrow contract suite with which to interact. Default is V2.
  * @returns Address of the option chain corresponding to the passed ticker and expiration.
  */
@@ -558,17 +655,17 @@ export async function prepareDeliverOptionParams(
   const hashedValues = ethers.utils.solidityKeccak256(
     [
       "bool", // buy_flag - Boolean to indicate whether this is a buy (true) or sell (false).
-      "string", // ticker - String to indicate a particular asset ('AVAX', 'ETH', 'BTC', or 'LINK').
+      "string", // ticker - String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
       "uint256", // expiration - Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
-      "uint256", // readableExpiration - Date in 'MMDDYYYY' format (e.g. '01252022' for January 25th, 2022).
+      "uint256", // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
       strikeType, // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
-      "string", // decimalStrike - String version of the strike that includes the decimal places (e.g. '12.25').
+      "string", // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
       "uint256", // contract_type - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
       "uint256", // quantity - Number of contracts desired in the order.
       "uint256", // threshold_price - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
     ],
     [
-      optionOrderParams.buyFlag,
+      [0, 2].includes(optionOrderParams.order_type),
       optionOrderParams.ticker,
       unixExpiration,
       optionOrderParams.expiration,
@@ -609,7 +706,7 @@ export async function prepareDeliverOptionParams(
  *
  * @param wallet Wallet with which you want to call the option settlement function.
  * @param ticker Ticker of the underlying asset.
- * @param readableExpiration Readable expiration in the 'MMDDYYYY' format.
+ * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
  * @param owner Address of the option owner for whom you are settling. This is only required for 'v3'.
  * @param version Version of Arrow contract suite with which to interact. Default is V2.
  */
@@ -666,6 +763,7 @@ const arrowsdk = {
   getCurrentTimeUTC,
   getTimeUTC,
   getExpirationTimestamp,
+  getUnderlierPriceAndHistory,
 
   // API functions
   estimateOptionPrice,
