@@ -7,7 +7,7 @@ import {
   IERC20Metadata,
   IArrowRouter,
   IArrowEvents,
-  IArrowRegistry,
+  IArrowRegistry
 } from "../abis";
 
 import { ArrowOptionChainProxy } from "../build";
@@ -25,7 +25,7 @@ export interface Greeks {
 }
 
 export interface Option {
-  order_type?: number;
+  order_type?: ORDER_TYPE;
   ticker: string;
   expiration: string;
   strike: number | number[];
@@ -38,7 +38,6 @@ export interface Option {
 }
 
 export interface OptionOrderParams extends Option {
-  order_type: number;
   thresholdPrice: number;
 }
 
@@ -85,14 +84,19 @@ const UNSUPPORTED_EXPIRATION_ERROR = new Error(
 );
 
 export enum VERSION {
-  V2 = "v2",
   V3 = "v3",
   COMPETITION = "competition",
 }
 
+export enum ORDER_TYPE {
+  LONG_OPEN = 0,
+  LONG_CLOSE = 1,
+  SHORT_OPEN = 2,
+  SHORT_CLOSE = 3,
+}
+
 export const urls: any = {
   api: {
-    [VERSION.V2]: "https://fuji-v2-api.arrow.markets/v1",
     [VERSION.V3]: "https://fuji-v3-api.arrow.markets/v1/",
     [VERSION.COMPETITION]: "https://competition-api.arrow.markets/v1",
   },
@@ -108,9 +112,6 @@ export const providers: any = {
 export const addresses: any = {
   fuji: {
     router: {
-      [VERSION.V2]: ethers.utils.getAddress(
-        "0x28121fb95692a9be3fb1c6891ffee74b88bdfb2b"
-      ),
       [VERSION.V3]: ethers.utils.getAddress(
         "0x31122CeF9891Ef661C99352266FA0FF0079a0e06"
       ),
@@ -123,10 +124,6 @@ export const addresses: any = {
 
 export const bytecodeHashes: any = {
   ArrowOptionChainProxy: {
-    [VERSION.V2]: ethers.utils.solidityKeccak256(
-      ["bytes"],
-      [ArrowOptionChainProxy.v2.bytecode]
-    ),
     [VERSION.V3]: ethers.utils.solidityKeccak256(
       ["bytes"],
       [ArrowOptionChainProxy.v3.bytecode]
@@ -146,25 +143,14 @@ export const bytecodeHashes: any = {
  * Get an estimated price for the given option parameters from Arrow's pricing model.
  *
  * @param option Object containing parameters that define an option on Arrow.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Float that represents an estimate of the option price using Arrow's pricing model.
  */
 export async function estimateOptionPrice(
   option: Option,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ) {
-  let strike = undefined;
-  switch (version) {
-    case VERSION.V2:
-      strike = option.strike;
-      break;
-    case VERSION.V3:
-    case VERSION.COMPETITION:
-      strike = (option.strike as number[]).join("|");
-      break;
-    default:
-      throw UNSUPPORTED_VERSION_ERROR;
-  }
+  const strike = (option.strike as number[]).join("|");
 
   const { priceHistory: price_history, currentPrice } =
     await getUnderlierPriceAndHistory(option.ticker);
@@ -196,7 +182,7 @@ export async function estimateOptionPrice(
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
  * @param forecast Forecasted price of underlying asset.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Option object with optional price and greeks parameters populated.
  */
 
@@ -204,7 +190,7 @@ export async function getRecommendedOption(
   ticker: string,
   readableExpiration: string,
   forecast: number,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ) {
   const { currentPrice, priceHistory } = await getUnderlierPriceAndHistory(
     ticker
@@ -245,7 +231,7 @@ export async function getRecommendedOption(
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
  * @param contractType // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Array of Option objects with optional price and greeks parameters populated.
  */
 export async function getStrikeGrid(
@@ -253,7 +239,7 @@ export async function getStrikeGrid(
   ticker: string,
   readableExpiration: string,
   contractType: number,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ) {
   //TO DO Get HISTORICAL PRICE IF PRICE HISTORY IS NULL
   const { currentPrice, priceHistory } = await getUnderlierPriceAndHistory(
@@ -293,12 +279,12 @@ export async function getStrikeGrid(
  * Submit an option order to the API to compute the live price and submit a transaction to the blockchain.
  *
  * @param deliverOptionParams Object containing parameters necessary to create an option order on Arrow.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
 export async function submitOptionOrder(
   deliverOptionParams: DeliverOptionParams,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ) {
   if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
 
@@ -308,7 +294,7 @@ export async function submitOptionOrder(
     {
       order_type: deliverOptionParams.order_type,
       ticker: deliverOptionParams.ticker,
-      expiration: deliverOptionParams.expiration, // readableExpiration
+      expiration: deliverOptionParams.expiration, // readable expiration
       strike: deliverOptionParams.formattedStrike,
       contract_type: deliverOptionParams.contractType,
       quantity: deliverOptionParams.quantity,
@@ -329,7 +315,7 @@ export async function submitOptionOrder(
  * Get the router contract from Arrow's contract suite.
  *
  * @param wallet Wallet with which you want to connect the instance of the router contract. Default is Fuji provider.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Local instance of ethers.Contract for the Arrow router contract.
  */
 export function getRouterContract(
@@ -337,7 +323,7 @@ export function getRouterContract(
     | ethers.providers.Provider
     | ethers.Wallet
     | ethers.Signer = providers.fuji,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ) {
   if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
 
@@ -353,7 +339,7 @@ export function getRouterContract(
  * Get the stablecoin contract that is associated with Arrow's contract suite.
  *
  * @param wallet Wallet with which you want to connect the instance of the stablecoin contract. Default is Fuji provider.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Local instance of ethers.Contract for the stablecoin contract.
  */
 export async function getStablecoinContract(
@@ -361,7 +347,7 @@ export async function getStablecoinContract(
     | ethers.providers.Provider
     | ethers.Wallet
     | ethers.Signer = providers.fuji,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ) {
   if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
 
@@ -377,7 +363,7 @@ export async function getStablecoinContract(
  * Get the events contract from Arrow's contract suite.
  *
  * @param wallet Wallet with which you want to connect the instance of the Arrow events contract. Default is Fuji provider.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Local instance of ethers.Contract for the Arrow events contract.
  */
 export async function getEventsContract(
@@ -385,7 +371,7 @@ export async function getEventsContract(
     | ethers.providers.Provider
     | ethers.Wallet
     | ethers.Signer = providers.fuji,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ) {
   if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
 
@@ -401,7 +387,7 @@ export async function getEventsContract(
  * Get the registry contract from Arrow's registry suite.
  *
  * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Local instance of ethers.Contract for the Arrow registry contract.
  */
 export async function getRegistryContract(
@@ -409,7 +395,7 @@ export async function getRegistryContract(
     | ethers.providers.Provider
     | ethers.Wallet
     | ethers.Signer = providers.fuji,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ) {
   if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
 
@@ -474,8 +460,6 @@ export const getUnderlierId = (ticker: string) => {
       return "ethereum";
     case "BTC":
       return "bitcoin";
-    case "LINK":
-      return "chainlink";
   }
 };
 
@@ -545,10 +529,11 @@ export function getExpirationTimestamp(readableExpiration: string) {
  * Checks if a unix expiration is a Friday
  *
  * @param unixExpiration Unix expiration timestamp
- * @returns True if provided unixExpiration is a Friday
+ * @returns True if is a Friday, else returns False
  */
 export function isFriday(unixExpiration: number) {
-  const dayOfTheWeek: number = (Math.floor(unixExpiration / 86400) + 4) % 7;
+  const dayOfTheWeek: number =
+    (Math.floor(unixExpiration / (60 * 60 * 24)) + 4) % 7;
   return dayOfTheWeek === 5;
 }
 
@@ -557,20 +542,20 @@ export function isFriday(unixExpiration: number) {
  *
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Address of the option chain corresponding to the passed ticker and expiration.
  */
 export async function computeOptionChainAddress(
   ticker: string,
   readableExpiration: string,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ): Promise<string> {
   // Get chain factory contract address from router
   const router = getRouterContract(providers.fuji, version);
 
   let optionChainFactoryAddress = undefined;
   switch (version) {
-    case VERSION.V2:
+    case VERSION.V3:
       optionChainFactoryAddress = await router.getChainFactoryAddress();
       break;
     case VERSION.V3:
@@ -602,13 +587,13 @@ export async function computeOptionChainAddress(
  *
  * @param optionOrderParams Object containing parameters necesssary in computing parameters for submitting an option order.
  * @param wallet Wallet with which you want to submit the option order.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns JSON that contains the variables necessary in completing the option order.
  */
 export async function prepareDeliverOptionParams(
   optionOrderParams: OptionOrderParams,
   wallet: ethers.Wallet | ethers.Signer,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ): Promise<DeliverOptionParams> {
   // Get stablecoin decimals
   const stablecoinDecimals = await (
@@ -628,7 +613,7 @@ export async function prepareDeliverOptionParams(
   let strikeType = undefined;
 
   switch (version) {
-    case VERSION.V2:
+    case VERSION.V3:
       formattedStrike = (optionOrderParams.strike as number).toFixed(2);
       bigNumberStrike = ethers.utils.parseUnits(
         formattedStrike,
@@ -655,7 +640,7 @@ export async function prepareDeliverOptionParams(
   const hashedValues = ethers.utils.solidityKeccak256(
     [
       "bool", // buy_flag - Boolean to indicate whether this is a buy (true) or sell (false).
-      "string", // ticker - String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+      "string", // ticker - String to indicate a particular asset ("AVAX", "ETH", or "BTC").
       "uint256", // expiration - Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
       "uint256", // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
       strikeType, // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
@@ -665,7 +650,9 @@ export async function prepareDeliverOptionParams(
       "uint256", // threshold_price - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
     ],
     [
-      [0, 2].includes(optionOrderParams.order_type),
+      [ORDER_TYPE.LONG_OPEN, ORDER_TYPE.SHORT_OPEN].includes(
+        optionOrderParams.order_type!
+      ),
       optionOrderParams.ticker,
       unixExpiration,
       optionOrderParams.expiration,
@@ -708,19 +695,19 @@ export async function prepareDeliverOptionParams(
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
  * @param owner Address of the option owner for whom you are settling. This is only required for 'v3'.
- * @param version Version of Arrow contract suite with which to interact. Default is V2.
+ * @param version Version of Arrow contract suite with which to interact. Default is V3.
  */
 export async function settleOptions(
   wallet: ethers.Wallet | ethers.Signer,
   ticker: string,
   readableExpiration: string,
   owner = undefined,
-  version: VERSION = VERSION.V2
+  version: VERSION = VERSION.V3
 ) {
   const router = getRouterContract(wallet, version);
 
   switch (version) {
-    case VERSION.V2:
+    case VERSION.V3:
       try {
         await router.callStatic.settleOption(ticker, readableExpiration);
         await router.settleOption(ticker, readableExpiration);
