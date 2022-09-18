@@ -556,9 +556,6 @@ export async function computeOptionChainAddress(
   let optionChainFactoryAddress = undefined;
   switch (version) {
     case VERSION.V3:
-      optionChainFactoryAddress = await router.getChainFactoryAddress();
-      break;
-    case VERSION.V3:
     case VERSION.COMPETITION:
       optionChainFactoryAddress = await router.getOptionChainFactoryAddress();
       break;
@@ -613,14 +610,6 @@ export async function prepareDeliverOptionParams(
   let strikeType = undefined;
 
   switch (version) {
-    case VERSION.V3:
-      formattedStrike = (optionOrderParams.strike as number).toFixed(2);
-      bigNumberStrike = ethers.utils.parseUnits(
-        formattedStrike,
-        stablecoinDecimals
-      );
-      strikeType = "uint256";
-      break;
     case VERSION.V3:
     case VERSION.COMPETITION:
       const strikes = (optionOrderParams.strike as number[]).map((strike) =>
@@ -707,14 +696,6 @@ export async function settleOptions(
   const router = getRouterContract(wallet, version);
 
   switch (version) {
-    case VERSION.V3:
-      try {
-        await router.callStatic.settleOption(ticker, readableExpiration);
-        await router.settleOption(ticker, readableExpiration);
-      } catch (err) {
-        throw new Error("Settlement call would fail on chain.");
-      }
-      break;
     case VERSION.V3:
     case VERSION.COMPETITION:
       try {
