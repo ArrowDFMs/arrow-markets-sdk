@@ -7,7 +7,7 @@ import {
   IERC20Metadata,
   IArrowRouter,
   IArrowEvents,
-  IArrowRegistry
+  IArrowRegistry,
 } from "../abis";
 
 import { ArrowOptionChainProxy } from "../build";
@@ -17,11 +17,11 @@ import { ArrowOptionChainProxy } from "../build";
  **************************************/
 
 export interface Greeks {
-  delta: number,
-  gamma: number,
-  rho: number,
-  theta: number,
-  vega: number,
+  delta: number;
+  gamma: number;
+  rho: number;
+  theta: number;
+  vega: number;
 }
 
 export interface Option {
@@ -98,7 +98,7 @@ export enum ORDER_TYPE {
 export const urls: any = {
   api: {
     [VERSION.V3]: "https://fuji-v3-api.arrow.markets/v1/",
-    [VERSION.COMPETITION]: "https://competition-api.arrow.markets/v1",
+    [VERSION.COMPETITION]: "https://competition-v2-api.arrow.markets/v1",
   },
   provider: {
     fuji: "https://api.avax-test.network/ext/bc/C/rpc",
