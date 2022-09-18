@@ -7,7 +7,7 @@ import {
   IERC20Metadata,
   IArrowRouter,
   IArrowEvents,
-  IArrowRegistry,
+  IArrowRegistry
 } from "../abis";
 
 import { ArrowOptionChainProxy } from "../build";
@@ -17,11 +17,11 @@ import { ArrowOptionChainProxy } from "../build";
  **************************************/
 
 export interface Greeks {
-  delta: number;
-  gamma: number;
-  rho: number;
-  theta: number;
-  vega: number;
+  delta: number,
+  gamma: number,
+  rho: number,
+  theta: number,
+  vega: number,
 }
 
 export interface Option {
