@@ -75,6 +75,8 @@ export interface GetUnderlierHistoricalPricesResponse {
  *          USEFUL CONSTANTS          *
  **************************************/
 
+const quantityScaleFactor = 10 ** 2;
+
 const binanceSymbols: Record<string, any> = {
   avax: "AVAXUSDT",
   eth: "ETHUSDT",
@@ -699,7 +701,7 @@ export async function prepareDeliverOptionParams(
 
   // Calculate amount to approve for this order (total = thresholdPrice * quantity)
   const amountToApprove = ethers.BigNumber.from(thresholdPrice).mul(
-    optionOrderParams.quantity!
+   version === VERSION.COMPETITION ? optionOrderParams.quantity! / quantityScaleFactor : optionOrderParams.quantity!
   );
 
   return {
