@@ -419,10 +419,6 @@ export async function getRegistryContract(
 
 export async function getUnderlierSpotPrice(ticker: string, currency = "usd") {
   // If ticker is not for a crypto asset on Arrow
-  console.log(
-    "binanceSymbols[ticker.toLowerCase()]",
-    binanceSymbols[ticker.toLowerCase()]
-  );
   if (!(ticker.toLowerCase() in binanceSymbols)) {
     throw Error("Ticker is not available on Arrow Markets.");
   }
