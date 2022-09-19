@@ -251,6 +251,7 @@ export async function getStrikeGrid(
   const { currentPrice, priceHistory } = await getUnderlierPriceAndHistory(
     ticker
   );
+  console.log("currentPrice", currentPrice);
   if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
 
   const strikeGridResponse = await axios.post(
@@ -473,7 +474,7 @@ export async function getUnderlierPriceAndHistory(ticker: string) {
       }
     );
     const priceHistory = prices.map((entry) => entry[1]);
-    const currentPrice = getUnderlierSpotPrice(ticker);
+    const currentPrice = await getUnderlierSpotPrice(ticker);
 
     return {
       priceHistory: priceHistory,
