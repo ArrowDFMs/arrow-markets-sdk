@@ -80,7 +80,7 @@ const quantityScaleFactor = 10 ** 2;
 const binanceSymbols: Record<string, any> = {
   avax: "AVAXUSDT",
   eth: "ETHUSDT",
-  btc: "BTCUSDT",
+  btc: "BTCUSDT"
 };
 
 const UNSUPPORTED_VERSION_ERROR = new Error(
