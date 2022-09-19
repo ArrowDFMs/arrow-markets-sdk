@@ -247,11 +247,9 @@ export async function getStrikeGrid(
   contractType: number,
   version: VERSION = VERSION.V3
 ) {
-  //TO DO Get HISTORICAL PRICE IF PRICE HISTORY IS NULL
   const { currentPrice, priceHistory } = await getUnderlierPriceAndHistory(
     ticker
   );
-  console.log("currentPrice", currentPrice);
   if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR;
 
   const strikeGridResponse = await axios.post(
