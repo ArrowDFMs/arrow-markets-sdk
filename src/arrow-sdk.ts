@@ -247,7 +247,6 @@ export async function getStrikeGrid(
   contractType: number,
   version: VERSION = VERSION.V3
 ) {
-  //TO DO Get HISTORICAL PRICE IF PRICE HISTORY IS NULL
   const { currentPrice, priceHistory } = await getUnderlierPriceAndHistory(
     ticker
   );
@@ -473,7 +472,7 @@ export async function getUnderlierPriceAndHistory(ticker: string) {
       }
     );
     const priceHistory = prices.map((entry) => entry[1]);
-    const currentPrice = getUnderlierSpotPrice(ticker);
+    const currentPrice = await getUnderlierSpotPrice(ticker);
 
     return {
       priceHistory: priceHistory,
