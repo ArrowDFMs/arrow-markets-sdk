@@ -21,7 +21,7 @@ export interface Greeks {
   gamma: number,
   rho: number,
   theta: number,
-  vega: number,
+  vega: number
 }
 
 export interface Option {
@@ -75,6 +75,12 @@ export interface GetUnderlierHistoricalPricesResponse {
  *          USEFUL CONSTANTS          *
  **************************************/
 
+const binanceSymbols: Record<string, any> = {
+  avax: "AVAXUSDT",
+  eth: "ETHUSDT",
+  btc: "BTCUSDT"
+};
+
 const UNSUPPORTED_VERSION_ERROR = new Error(
   "Please select a supported contract version."
 );
@@ -98,7 +104,7 @@ export enum ORDER_TYPE {
 export const urls: any = {
   api: {
     [VERSION.V3]: "https://fuji-v3-api.arrow.markets/v1/",
-    [VERSION.COMPETITION]: "https://competition-api.arrow.markets/v1",
+    [VERSION.COMPETITION]: "https://competition-v2-api.arrow.markets/v1",
   },
   provider: {
     fuji: "https://api.avax-test.network/ext/bc/C/rpc",
@@ -116,7 +122,7 @@ export const addresses: any = {
         "0x31122CeF9891Ef661C99352266FA0FF0079a0e06"
       ),
       [VERSION.COMPETITION]: ethers.utils.getAddress(
-        "0x3e8a9Ad1336eF8007A416383daD084ef52E8DA86"
+        "0xD0890Cc0B2F5Cd6DB202378C35F39Db3EB0A4b0C"
       ),
     },
   },
@@ -411,6 +417,42 @@ export async function getRegistryContract(
  *           HELPER FUNCTIONS           *
  ****************************************/
 
+export async function getUnderlierSpotPrice(ticker: string, currency = "usd") {
+  // If ticker is not for a crypto asset on Arrow
+  if (!(ticker.toLowerCase() in binanceSymbols)) {
+    throw Error("Ticker is not available on Arrow Markets.");
+  }
+
+  // Using Binance API to get latest price
+  const binanceResponse = await axios.get(
+    `https://api.binance.com/api/v3/ticker/price?symbol=${
+      binanceSymbols[ticker.toLowerCase()]
+    }`
+  );
+
+  // If Binance tells us we have been making too many requests, use Cryptowatch
+  if ("code" in binanceResponse && binanceResponse["data"]["code"] == -1003) {
+    // Use CryptoWatch API to get latest price
+    const cryptowatchResponse = await axios.get(
+      `https://api.cryptowat.ch/markets/binance/${
+        binanceSymbols[ticker.toLowerCase()]
+      }/price`
+    );
+
+    try {
+      return parseFloat(cryptowatchResponse["data"]["result"]["price"]);
+    } catch {
+      throw Error("Could not retrieve underlying spot price from Cryptowatch.");
+    }
+  } else {
+    try {
+      return parseFloat(binanceResponse["data"]["price"]);
+    } catch {
+      throw Error("Could not retrieve underlying spot price from Binance.");
+    }
+  }
+}
+
 export async function getUnderlierPriceAndHistory(ticker: string) {
   try {
     const days = 84;
@@ -431,7 +473,7 @@ export async function getUnderlierPriceAndHistory(ticker: string) {
       }
     );
     const priceHistory = prices.map((entry) => entry[1]);
-    const currentPrice = priceHistory[priceHistory.length - 1];
+    const currentPrice = getUnderlierSpotPrice(ticker);
 
     return {
       priceHistory: priceHistory,
@@ -556,9 +598,6 @@ export async function computeOptionChainAddress(
   let optionChainFactoryAddress = undefined;
   switch (version) {
     case VERSION.V3:
-      optionChainFactoryAddress = await router.getChainFactoryAddress();
-      break;
-    case VERSION.V3:
     case VERSION.COMPETITION:
       optionChainFactoryAddress = await router.getOptionChainFactoryAddress();
       break;
@@ -613,14 +652,6 @@ export async function prepareDeliverOptionParams(
   let strikeType = undefined;
 
   switch (version) {
-    case VERSION.V3:
-      formattedStrike = (optionOrderParams.strike as number).toFixed(2);
-      bigNumberStrike = ethers.utils.parseUnits(
-        formattedStrike,
-        stablecoinDecimals
-      );
-      strikeType = "uint256";
-      break;
     case VERSION.V3:
     case VERSION.COMPETITION:
       const strikes = (optionOrderParams.strike as number[]).map((strike) =>
@@ -707,14 +738,6 @@ export async function settleOptions(
   const router = getRouterContract(wallet, version);
 
   switch (version) {
-    case VERSION.V3:
-      try {
-        await router.callStatic.settleOption(ticker, readableExpiration);
-        await router.settleOption(ticker, readableExpiration);
-      } catch (err) {
-        throw new Error("Settlement call would fail on chain.");
-      }
-      break;
     case VERSION.V3:
     case VERSION.COMPETITION:
       try {
