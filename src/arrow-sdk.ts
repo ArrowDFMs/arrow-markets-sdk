@@ -21,7 +21,7 @@ export interface Greeks {
   gamma: number,
   rho: number,
   theta: number,
-  vega: number,
+  vega: number
 }
 
 export interface Option {
@@ -74,6 +74,12 @@ export interface GetUnderlierHistoricalPricesResponse {
 /**************************************
  *          USEFUL CONSTANTS          *
  **************************************/
+
+const binanceSymbols: Record<string, any> = {
+  avax: "AVAXUSDT",
+  eth: "ETHUSDT",
+  btc: "BTCUSDT",
+};
 
 const UNSUPPORTED_VERSION_ERROR = new Error(
   "Please select a supported contract version."
@@ -411,6 +417,46 @@ export async function getRegistryContract(
  *           HELPER FUNCTIONS           *
  ****************************************/
 
+export async function getUnderlierSpotPrice(ticker: string, currency = "usd") {
+  // If ticker is not for a crypto asset on Arrow
+  console.log(
+    "binanceSymbols[ticker.toLowerCase()]",
+    binanceSymbols[ticker.toLowerCase()]
+  );
+  if (!(ticker.toLowerCase() in binanceSymbols)) {
+    throw Error("Ticker is not available on Arrow Markets.");
+  }
+
+  // Using Binance API to get latest price
+  const binanceResponse = await axios.get(
+    `https://api.binance.com/api/v3/ticker/price?symbol=${
+      binanceSymbols[ticker.toLowerCase()]
+    }`
+  );
+
+  // If Binance tells us we have been making too many requests, use Cryptowatch
+  if ("code" in binanceResponse && binanceResponse["data"]["code"] == -1003) {
+    // Use CryptoWatch API to get latest price
+    const cryptowatchResponse = await axios.get(
+      `https://api.cryptowat.ch/markets/binance/${
+        binanceSymbols[ticker.toLowerCase()]
+      }/price`
+    );
+
+    try {
+      return parseFloat(cryptowatchResponse["data"]["result"]["price"]);
+    } catch {
+      throw Error("Could not retrieve underlying spot price from Cryptowatch.");
+    }
+  } else {
+    try {
+      return parseFloat(binanceResponse["data"]["price"]);
+    } catch {
+      throw Error("Could not retrieve underlying spot price from Binance.");
+    }
+  }
+}
+
 export async function getUnderlierPriceAndHistory(ticker: string) {
   try {
     const days = 84;
@@ -431,7 +477,7 @@ export async function getUnderlierPriceAndHistory(ticker: string) {
       }
     );
     const priceHistory = prices.map((entry) => entry[1]);
-    const currentPrice = priceHistory[priceHistory.length - 1];
+    const currentPrice = getUnderlierSpotPrice(ticker);
 
     return {
       priceHistory: priceHistory,
