@@ -171,7 +171,10 @@ export async function estimateOptionPrice(
       expiration: option.expiration, // API only takes in readable expirations so it can manually set the expiration at 9:00 PM UTC
       strike: strike,
       contract_type: option.contractType,
-      quantity: option.quantity,
+      quantity:
+        version === VERSION.COMPETITION
+          ? option.quantity! * quantityScaleFactor
+          : option.quantity!,
       price_history: price_history,
       spot_price: currentPrice,
     }
@@ -304,7 +307,10 @@ export async function submitOptionOrder(
       expiration: deliverOptionParams.expiration, // readable expiration
       strike: deliverOptionParams.formattedStrike,
       contract_type: deliverOptionParams.contractType,
-      quantity: deliverOptionParams.quantity,
+      quantity:
+        version === VERSION.COMPETITION
+          ? deliverOptionParams.quantity! * quantityScaleFactor
+          : deliverOptionParams.quantity!,
       threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
       hashed_params: deliverOptionParams.hashedValues,
       signature: deliverOptionParams.signature,
@@ -691,7 +697,9 @@ export async function prepareDeliverOptionParams(
       bigNumberStrike,
       formattedStrike,
       optionOrderParams.contractType,
-      optionOrderParams.quantity!,
+      version === VERSION.COMPETITION
+        ? optionOrderParams.quantity! * quantityScaleFactor
+        : optionOrderParams,
       thresholdPrice,
     ]
   );
@@ -699,9 +707,10 @@ export async function prepareDeliverOptionParams(
     ethers.utils.arrayify(hashedValues)
   ); // Note that we are signing a message, not a transaction
 
-  // Calculate amount to approve for this order (total = thresholdPrice * quantity)
-  const amountToApprove = ethers.BigNumber.from(thresholdPrice).mul(
-   version === VERSION.COMPETITION ? optionOrderParams.quantity! / quantityScaleFactor : optionOrderParams.quantity!
+  const value = optionOrderParams.thresholdPrice * optionOrderParams.quantity!;
+
+  const amountToApprove = ethers.BigNumber.from(
+    ethers.utils.parseUnits(value.toString(), stablecoinDecimals)
   );
 
   return {
