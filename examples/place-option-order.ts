@@ -59,7 +59,7 @@ async function main() {
     const binanceSymbol = 'AVAXUSDT';
     const binanceResponse = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`);
     const spotPrice = binanceResponse.data.price;
-    option.spotPrice = spotPrice;
+    option.underlierSpotPrice = spotPrice;
 
     // Estimate option price by making API request
     const estimatedOptionPrice = await estimateOptionPrice(option, version)
