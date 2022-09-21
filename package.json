@@ -1,6 +1,6 @@
 {
     "name": "@arrow-markets/arrow-sdk",
-    "version": "1.1.7",
+    "version": "1.2.0",
     "description": "This SDK is meant to make it easier for developers to connect to the Arrow API.",
     "main": "lib/src/arrow-sdk.js",
     "types": "lib/src/arrow-sdk.d.ts",
@@ -27,12 +27,15 @@
     },
     "homepage": "https://github.com/ArrowDFMs/arrow-markets-sdk#readme",
     "dependencies": {
-        "@types/node": "17.0.17",
         "axios": "0.24.0",
         "dotenv": "10.0.0",
         "ethers": "5.5.2",
-        "moment": "2.29.3",
-        "ts-node": "10.5.0",
-        "typescript": "4.5.4"
+        "moment": "2.29.3"
+    },
+    "devDependencies": {
+        "@types/node": "18.7.18",
+        "ts-node": "10.9.1",
+        "typedoc": "0.23.15",
+        "typescript": "4.8.3"
     }
 }
