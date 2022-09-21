@@ -340,6 +340,7 @@ const arrowsdk = {
 
     // API functions
     estimateOptionPrice,
+    estimateOptionPriceAndGreeks,
     getRecommendedOption,
     getStrikeGrid,
     submitOptionOrder,
