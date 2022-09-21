@@ -453,14 +453,18 @@ export async function prepareDeliverOptionParams(
         ethers.utils.parseUnits(value.toString(), stablecoinDecimals)
     )
 
-    return {
-        hashedValues,
-        signature,
-        amountToApprove,
-        ...optionOrderParams,
-        unixExpiration,
-        formattedStrike,
-        bigNumberStrike,
-        bigNumberThresholdPrice: thresholdPrice
-    }
+   const modifiedOptionOrderParams = {
+     ...optionOrderParams,
+     quantity: intQuantity,
+   };
+   return {
+     hashedValues,
+     signature,
+     amountToApprove,
+     ...modifiedOptionOrderParams,
+     unixExpiration,
+     formattedStrike,
+     bigNumberStrike,
+     bigNumberThresholdPrice: thresholdPrice
+   };
 }
