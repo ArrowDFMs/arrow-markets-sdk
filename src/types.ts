@@ -54,21 +54,21 @@ export interface Greeks {
     vega: number; // Change in value from a 1% change in volatility.
 }
 
-export interface Option {
+export interface OptionContract {
     ticker: Ticker; // Ticker enum that denotes a particular asset.
     expiration: string; // Readable expiration date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
     strike: number[]; // Accepts arrays with two values for spreads. Formatted as [longStrike, shortStrike].
     contractType: ContractType; // ContractType enum that indicates whether the option is a call, put, call spread, or put spread.
-    quantity?: number; // Float number of contracts desired in the order.
-    price?: number; // Float number that indicates the price of the option.
+    price?: number; // Float number that indicates the price of 1 option.
     underlierSpotPrice?: number; // Most up-to-date price of underlying asset.
     underlierPriceHistory?: number[]; // Prices of underlying asset over some period of history.
     greeks?: Greeks; // Greeks interface that specifies which greeks are tied to this option.
 }
 
-export interface OptionOrderParams extends Option {
+export interface OptionOrderParams extends OptionContract {
+    quantity?: number; // Float number of contracts desired in the order.
     orderType: OrderType // OrderType enum that indicates whether this option is a long open, long close, short open, or short close.
-    thresholdPrice: number; // The minimum (or maximum) price the user is willing to receive (or pay) for this specific option.
+    thresholdPrice?: number; // The minimum (or maximum) price the user is willing to receive (or pay) for this specific option.
 }
 
 export interface DeliverOptionParams extends OptionOrderParams {

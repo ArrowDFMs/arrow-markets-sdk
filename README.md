@@ -6,7 +6,7 @@ There is an `arrow-sdk.ts` file in the repository that contains useful variables
 
 ## API URLs
 
-The API can be accessed via `https://fuji-v2-api.arrow.markets/v1/<ENDPOINT>` or `https://competition-api.arrow.markets/v1/<ENDPOINT>`\
+The API can be accessed via `https://fuji-v3-api.arrow.markets/v1/<ENDPOINT>` or `https://competition-v2-api.arrow.markets/v1/<ENDPOINT>`\
 The Fuji test network can be accessed via `https://api.avax-test.network/ext/bc/C/rpc`
 
 ## Endpoints
@@ -17,44 +17,59 @@ Estimate Option Price: `/estimate-option-price`\
 Inputs:
 ```
 Body: {
+    "order_type", // 0 for open long, 1 for close long, 2 for open short, and 3 for close short.
     "ticker", // String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
     "expiration", // Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
     "strike", // Price at which contract becomes active at expiration.
     "contract_type", // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
     "quantity", // Number of contracts desired in the order.
+    "spot_price", // Current price of underlying assetas number. We recommend requesting this data from https://api.binance.com/api/v3/ticker/price?symbol={binance_symbol}.
     "price_history" // Price history of underlying asset in an array. We recommend requesting this data from https://api.coingecko.com/api/v3/coins/{crypto_id}/market_chart?vs_currency=usd&days=84.
 }
 ```
 Outputs:
 ```
 {
-    "option_price" // Current price of the option contract given the data from the "price_history" input.
+    "option_price", // Current price of the option contract given the data from the "price_history" input.
+    "greeks": {
+        "delta", // Sensitivity of an option’s price to changes in the value of the underlying.
+        "gamma", // Change in delta per change in price of the underlying.
+        "theta", // Measures time decay of price of option.
+        "rho", // Sensitivity of option prices to changes in interest rates.
+        "vega" // Change in value from a 1% change in volatility.
+    }
 }
 ```
 \
-Get Recommended Option: `/get-recommended-strike`\
+Get Recommended Option: `/get-recommended-option`\
 Note: This currently only works with the speculation workflow. Hedging workflow is coming soon.\
 `GET` request\
 \
 Inputs:
 ```
 Params: {
-    "ticker", // String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+    "ticker", // String to indicate a particular asset ("AVAX", "ETH", or "BTC").
     "expiration", // Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
-    "forecast" // Forecasted price of the underlying asset (e.g. we might expect AVAX to reach $115, so we would pass 115)
+    "forecast" // Forecasted price of the underlying asset (e.g. we might expect AVAX to reach $115, so we would pass 115).
+    "spot_price" // Current price of underlying assetas number.
+    "price_history" // Price history of underlying asset in an array.
 }
 ```
 Outputs:
 ```
 {
-    "contract_type", // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
-    "greeks": {
-        "delta", // How sensitive the price of this option is to changes in the price of the underlying.
-        "gamma", // How sensitive the price of this option is to reduction in the time to expiration on the scale of days.
-        "theta" // A measure of the sensitivity of the option's delta wrt changes in the underlying price.
-    },
-    "option_price", // Current price of the option contract.
-    "strike" // Price at which contract becomes active at expiration.
+    "option": {
+        "strike" // Price at which contract becomes active at expiration.
+        "price", // Current price of the option contract.
+        "contract_type", // 0 for call, 1 for put, 2 for call spread, and 3 for put spread. 
+        "greeks": {
+            "delta", // Sensitivity of an option’s price to changes in the value of the underlying.
+            "gamma", // Change in delta per change in price of the underlying.
+            "theta", // Measures time decay of price of option.
+            "rho", // Sensitivity of option prices to changes in interest rates.
+            "vega" // Change in value from a 1% change in volatility.
+        },
+    }
 }
 ```
 \
@@ -62,8 +77,8 @@ Submit Order: `/submit-order`\
 `POST` request
 ```
 Body: {
-    "buy_flag", // Boolean to indicate whether this is a buy (true) or sell (false).
-    "ticker", // String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
+    "order_type", // 0 for open long, 1 for close long, 2 for open short, and 3 for close short.
+    "ticker", // String to indicate a particular asset ("AVAX", "ETH", or "BTC").
     "expiration", // Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
     "strike", // Price at which contract becomes active at expiration.
     "contract_type", // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
@@ -118,11 +133,11 @@ The NewLiabilityCreation and NewLiabilityDestruction events look as follows:
 The code below is an example of how to access contract addresses through the Arrow router contract. The code is available in `./examples/get-stablecoin-contract.ts` as well.
 
 ```javascript
-import arrowsdk from '../arrow-sdk'
+import arrowsdk from "../lib/src/arrow-sdk"
 
 async function main() {
-    const version = arrowsdk.VERSION.V3
-    const stablecoin = await arrowsdk.getStablecoinContract(arrowsdk.providers.fuji, version)
+    const version = arrowsdk.Version.V3
+    const stablecoin = await arrowsdk.getStablecoinContract(version)
 }
 main()
 ```
@@ -134,7 +149,7 @@ The code below is used to place an order on the Arrow platform. There are severa
 Step 1: Prepare the `deliverOption()` function call parameters. This includes hashing the option parameters and having the user sign the hash.
 
 ```javascript
-const deliverOptionParams: DeliverOptionParams = await prepareDeliverOptionParams(optionOrderParams, wallet, version)
+const deliverOptionParams: DeliverOptionParams = await arrowsdk.prepareDeliverOptionParams(optionOrderParams, version, wallet)
 ```
 
 Inside `prepareDeliverOptionParams()` we can see how the hash and signature are produced
@@ -142,25 +157,25 @@ Inside `prepareDeliverOptionParams()` we can see how the hash and signature are 
 // Hash and sign the option order parameters for on-chain verification
 const hashedValues = ethers.utils.solidityKeccak256(
     [
-        'bool', // buy_flag - Boolean to indicate whether this is a buy (true) or sell (false).
-        'string', // ticker - String to indicate a particular asset ("AVAX", "ETH", "BTC", or "LINK").
-        'uint256', // expiration - Date in Unix timestamp. Must be 9:00 PM UTC (e.g. 1643144400 for January 25th, 2022)
-        'uint256', // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
-        'uint256' or 'uint256[2]', // strike - Ethers BigNumber version of the strike in terms of the stablecoin's decimals (e.g. ethers.utils.parseUnits(strike, await usdc_e.decimals())).
-        'string', // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
-        'uint256', // contract_type - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
-        'uint256', // quantity - Number of contracts desired in the order.
-        'uint256' // threshold_price - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+        "bool",       // buyFlag - Boolean to indicate whether this is a buy (true) or sell (false).
+        "string",     // ticker - String to indicate a particular asset ("AVAX", "ETH", or "BTC").
+        "uint256",    // expiration - Date in Unix timestamp. Must be 8:00 AM UTC (e.g. 1643097600 for January 25th, 2022).
+        "uint256",    // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+        "uint256[2]", // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
+        "string",     // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
+        "uint256",    // contractType - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+        "uint256",    // quantity - Integer number of contracts desired in the order. Has to be scaled by supported decimals (10**2).
+        "uint256"     // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
     ],
     [
-        buyFlag,
-        option.ticker,
-        option.expiration,
-        readableExpiration,
-        ethers.utils.parseUnits(option.decimalStrike, decimals), // option.decimalStrike * 10**stablecoinDecimals
-        option.decimalStrike,
-        option.contractType,
-        option.quantity,
+        optionOrderParams.orderType === OrderType.LONG_OPEN,
+        optionOrderParams.ticker,
+        unixExpiration,
+        optionOrderParams.expiration,
+        bigNumberStrike,
+        formattedStrike,
+        optionOrderParams.contractType,
+        intQuantity,
         thresholdPrice
     ]
 )
@@ -172,31 +187,29 @@ Step 2: Approval to option chain proxy.
 Because we deal in ERC20s, we require a user to allow the option chain contract to spend their stablecoin with an `approve()` function call. This must be done before submitting the request to the API to ensure that the transaction will succeed. Since the option chain proxy may not have been deployed yet, we must use `CREATE2` to compute the address for the option chain contract as follows:
 ```javascript
 // Get computed option chain address
-const optionChainAddress = await computeOptionChainAddress(option.ticker, option.expiration, version)
+const optionChainAddress = await arrowsdk.computeOptionChainAddress(option.ticker, option.expiration, version)
 
 // Approval circuit if the order is a "buy" order
-if (buyFlag) {
+if (deliverOptionParams.orderType === OrderType.LONG_OPEN) {
     // Get user's balance of stablecoin
     const userBalance = await stablecoin.balanceOf(wallet.address)
-    // Calculate amount to approve for this order (total = thresholdPrice * quantity)
-    const amountToApprove = ethers.BigNumber.from(thresholdPrice).mul(option.quantity)
 
     // If user's balance is less than the amount required for the approval, throw an error
-    if (userBalance.lt(amountToApprove)) {
+    if (userBalance.lt(deliverOptionParams.amountToApprove)) {
         throw new Error('You do not have enough stablecoin to pay for your indicated threshold price.')
     }
 
     // Get the amount that the option chain proxy is currently approved to spend
     let approvedAmount = await stablecoin.allowance(wallet.address, optionChainAddress)
     // If the approved amount is less than the amount required to be approved, ask user to approve the proper amount
-    if (approvedAmount.lt(amountToApprove)) {
+    if (approvedAmount.lt(deliverOptionParams.amountToApprove)) {
         // Wait for the approval to be confirmed on-chain
-        await (await stablecoin.approve(optionChainAddress, amountToApprove)).wait(numBlockConfirmations)
+        await (await stablecoin.approve(optionChainAddress, deliverOptionParams.amountToApprove)).wait(numBlockConfirmations)
 
         // Get the amount that the option chain proxy is approved to spend now
         approvedAmount = await stablecoin.allowance(wallet.address, optionChainAddress)
         // If the newly approved amount is still less than the amount required to be approved, throw and error
-        if (approvedAmount.lt(amountToApprove)) {
+        if (approvedAmount.lt(deliverOptionParams.amountToApprove)) {
             throw new Error('Approval to option chain failed.')
         }
     }
@@ -208,7 +221,7 @@ The `tx_hash` and `execution_price` parameters will be populated if the API call
 ```javascript
 // Submit order to API and get response
 try {
-    const {tx_hash, execution_price} = await submitOptionOrder(deliverOptionParams, version)
+    const {tx_hash, execution_price} = await arrowsdk.submitOptionOrder(deliverOptionParams, version)
 } catch(err) {
     console.log(err)
 }

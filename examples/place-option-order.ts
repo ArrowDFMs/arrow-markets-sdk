@@ -1,85 +1,73 @@
 // We use dotenv to retrieve the PRIVATE_KEY of the account with which the example order will be placed
 // but this does not have to be the way that you choose to inject your own private key into this example code.
-require('dotenv').config()
+import dotenv from "dotenv"
+dotenv.config()
 
 // Imports
-import axios from 'axios'
 import {
-    VERSION,
-    Option,
-    OptionOrderParams,
-    computeOptionChainAddress,
-    prepareDeliverOptionParams,
-    getStablecoinContract,
-    providers,
-    estimateOptionPrice,
-    submitOptionOrder,
+    ContractType,
     DeliverOptionParams,
-    getCurrentTimeUTC,
-    getReadableTimestamp
-} from '../lib/src/arrow-sdk'
-import { ethers } from 'ethers'
-import * as moment from 'moment'
+    OptionContract,
+    OptionOrderParams,
+    OrderType,
+    Ticker
+} from "../lib/src/types"
+import arrowsdk from "../lib/src/arrow-sdk"
+import { ethers } from "ethers"
+import moment from "moment"
 
 // Get wallet using private key from .env file
-const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, providers.fuji)
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, arrowsdk.providers.fuji)
 
 async function main() {
     // Specify version
-    const version = VERSION.V3
+    const version = arrowsdk.Version.COMPETITION
 
     // Get stablecoin contract from Arrow
-    const stablecoin = await getStablecoinContract(wallet, version)
+    const stablecoin = await arrowsdk.getStablecoinContract(version, wallet)
 
     // A constant indicating how many block confirmations
     // to wait after submitting transactions to the blockchain
     const numBlockConfirmations = 2
 
-    // Calculate a future expiration (as a UNIX timestamp)
-    // expirations must always be a Friday 
-    var resultDate = new Date();
-    var today = new Date();
-    resultDate.setDate(today.getDate() + (7 + 5 - today.getDay()) % 7);
-    const readableExpiration = moment.utc(resultDate).format('MMDDYYYY');
+    // Calculate a future expiration (as a UNIX timestamp).
+    // Expirations must always be a Friday.
+    const nextNearestFriday = moment.utc().add(1, 'week').set('day', 5)
+    const readableExpiration = nextNearestFriday.format('MMDDYYYY')
 
     // Option order parameters
-    const buyFlag = true // True if buying, false if selling
-    const option: Option = {
-        "ticker": "AVAX", // Ticker for Avalanche token
-        "expiration": readableExpiration, // The nearest friday from today
-        "strike": [87.02, 84.0], // Long strike of $87.02 (note that the ordering of the strikes in v3 is always [long, short] for spreads and always [long, 0] for naked calls/puts)
-        "contractType": 3, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
-        "quantity": 2, // 2 contracts
+    const option: OptionContract = {
+        "ticker": Ticker.AVAX,
+        "expiration": readableExpiration, // The next nearest friday from today
+        "strike": [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
+        "contractType": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
     }
-
-    // Get 12 weeks of price history from CoinGecko
-    const cryptoId = 'avalanche-2' // Assuming AVAX ticker. Please refer to CoinGecko's documentation for other IDs
-    const priceData = await axios.get(`https://api.coingecko.com/api/v3/coins/${cryptoId}/market_chart?vs_currency=usd&days=84`) // 12 weeks * 7 days per week = 84 days
-    option.underlierPriceHistory = priceData.data.prices.map((priceArr: number[]) => priceArr[1]) // Extract the prices out of the (timestamp, price) tuples
-    const binanceSymbol = 'AVAXUSDT';
-    const binanceResponse = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`);
-    const spotPrice = binanceResponse.data.price;
-    option.underlierSpotPrice = spotPrice;
-
-    // Estimate option price by making API request
-    const estimatedOptionPrice = await estimateOptionPrice(option, version)
-
-    // Prepare the order parameters
+    
+    // Get current price of underlying asset from Binance/CryptoWatch and 12 weeks of price history from CoinGecko.
+    option.underlierSpotPrice = await arrowsdk.getUnderlierSpotPrice(option.ticker)
+    option.underlierPriceHistory = await arrowsdk.getUnderlierPriceHistory(option.ticker)
+    
+    // Estimate option price by making API request.
     const optionOrderParams: OptionOrderParams = {
-        buyFlag,
+        "quantity": 2.0, // 2.0 contracts
         ...option,
-
-        // Below we set a threshold price for which any higher (for option buy) or lower (for option sell) price will be rejected in the option order
-        // For this example, we choose to set our thresholdPrice to be equal to the estimatedOptionPrice
-        thresholdPrice: estimatedOptionPrice
+        "orderType": OrderType.LONG_OPEN
     }
-    const deliverOptionParams: DeliverOptionParams = await prepareDeliverOptionParams(optionOrderParams, wallet, version)
+    const estimatedOptionPrice = await arrowsdk.estimateOptionPrice(optionOrderParams, version)
+
+    // Prepare the order parameters.
+    // Below, we set a threshold price for which any higher (for option buy) or lower (for option sell) price will be rejected in the option order.
+    // For this example, we choose to set our thresholdPrice to be equal to the estimatedOptionPrice.
+    optionOrderParams.thresholdPrice = estimatedOptionPrice
+
+    // Prepare the option order parameters
+    const deliverOptionParams: DeliverOptionParams = await arrowsdk.prepareDeliverOptionParams(optionOrderParams, version, wallet)
     
     // Get computed option chain address
-    const optionChainAddress = await computeOptionChainAddress(option.ticker, option.expiration, version)
+    const optionChainAddress = await arrowsdk.computeOptionChainAddress(option.ticker, option.expiration, version)
 
     // Approval circuit if the order is a "buy" order
-    if (deliverOptionParams.buyFlag) {
+    if (deliverOptionParams.orderType === OrderType.LONG_OPEN) {
         // Get user's balance of stablecoin
         const userBalance = await stablecoin.balanceOf(wallet.address)
 
@@ -105,7 +93,7 @@ async function main() {
     }
 
     // Submit order to API and get response
-    const {tx_hash, execution_price} = await submitOptionOrder(deliverOptionParams, version)
+    const { tx_hash, execution_price } = await arrowsdk.submitOptionOrder(deliverOptionParams, version)
 
     console.log("Transaction hash:", tx_hash) // Transaction has of option order on Arrow
     console.log("Execution price:", execution_price) // The price the user ended up paying for each option in their order

@@ -25,6 +25,7 @@ import {
     bytecodeHashes,
     coingeckoIDs,
     providers,
+    quantityScaleFactor,
     secondsPerDay,
     UNSUPPORTED_EXPIRATION_ERROR,
     UNSUPPORTED_VERSION_ERROR
@@ -45,16 +46,16 @@ import {
 /**
  * Get the router contract from Arrow's contract suite.
  *
- * @param wallet Wallet with which you want to connect the instance of the router contract. Default is Fuji provider.
  * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param wallet Wallet with which you want to connect the instance of the router contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow router contract.
  */
 export function getRouterContract(
+    version = Version.V3,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
-        | ethers.Signer = providers.fuji,
-    version = Version.V3
+        | ethers.Signer = providers.fuji
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
@@ -69,21 +70,21 @@ export function getRouterContract(
 /**
  * Get the stablecoin contract that is associated with Arrow's contract suite.
  *
- * @param wallet Wallet with which you want to connect the instance of the stablecoin contract. Default is Fuji provider.
  * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param wallet Wallet with which you want to connect the instance of the stablecoin contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the stablecoin contract.
  */
 export async function getStablecoinContract(
+    version = Version.V3,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
-        | ethers.Signer = providers.fuji,
-    version = Version.V3
+        | ethers.Signer = providers.fuji
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
     const stablecoin = new ethers.Contract(
-        await getRouterContract(wallet, version).getStablecoinAddress(),
+        await getRouterContract(version, wallet).getStablecoinAddress(),
         IERC20Metadata,
         wallet
     )
@@ -93,21 +94,21 @@ export async function getStablecoinContract(
 /**
  * Get the events contract from Arrow's contract suite.
  *
- * @param wallet Wallet with which you want to connect the instance of the Arrow events contract. Default is Fuji provider.
  * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param wallet Wallet with which you want to connect the instance of the Arrow events contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow events contract.
  */
 export async function getEventsContract(
+    version = Version.V3,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
-        | ethers.Signer = providers.fuji,
-    version = Version.V3
+        | ethers.Signer = providers.fuji
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
     const events = new ethers.Contract(
-        await getRouterContract(wallet, version).getEventsAddress(),
+        await getRouterContract(version, wallet).getEventsAddress(),
         IArrowEvents[version],
         wallet
     )
@@ -117,21 +118,21 @@ export async function getEventsContract(
 /**
  * Get the registry contract from Arrow's registry suite.
  *
- * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
  * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow registry contract.
  */
 export async function getRegistryContract(
+    version = Version.V3,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
-        | ethers.Signer = providers.fuji,
-    version = Version.V3
+        | ethers.Signer = providers.fuji
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
     const registry = new ethers.Contract(
-        await getRouterContract(wallet, version).getRegistryAddress(),
+        await getRouterContract(version, wallet).getRegistryAddress(),
         IArrowRegistry[version],
         wallet
     )
@@ -151,18 +152,16 @@ export async function getRegistryContract(
  * @returns Spot price of underlying asset specified by ticker.
  */
 export async function getUnderlierSpotPrice(ticker: Ticker) {
-    const lowercaseTicker = ticker.toLowerCase()
-
     // Using Binance API to get latest price
     const binanceResponse = await axios.get(
-        `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbols[lowercaseTicker]}`
+        `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbols[ticker]}`
     )
 
     // If Binance tells us we have been making too many requests, use Cryptowatch
     if ("code" in binanceResponse && binanceResponse["data"]["code"] == -1003) {
         // Use CryptoWatch API to get latest price
         const cryptowatchResponse = await axios.get(
-            `https://api.cryptowat.ch/markets/binance/${binanceSymbols[lowercaseTicker]}/price`
+            `https://api.cryptowat.ch/markets/binance/${binanceSymbols[ticker]}/price`
         )
 
         try {
@@ -192,7 +191,7 @@ export async function getUnderlierPriceHistory(
     days = 84,
     currency = Currency.USD
 ) {
-    const underlierId = coingeckoIDs[ticker.toLowerCase()]
+    const underlierID = coingeckoIDs[ticker]
 
     const {
         data: {
@@ -200,7 +199,7 @@ export async function getUnderlierPriceHistory(
             prices
         }
     } = await axios.get<GetUnderlierHistoricalPricesResponse>(
-        `https://api.coingecko.com/api/v3/coins/${underlierId}/market_chart`,
+        `https://api.coingecko.com/api/v3/coins/${underlierID}/market_chart`,
         {
             headers: {
                 "Content-Type": "application/json",
@@ -330,15 +329,20 @@ export function isFriday(unixTimestamp: number): boolean {
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
  * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
  * @returns Address of the option chain corresponding to the passed ticker and expiration.
  */
 export async function computeOptionChainAddress(
     ticker: Ticker,
     readableExpiration: string,
-    version = Version.V3
+    version = Version.V3,
+    wallet:
+        | ethers.providers.Provider
+        | ethers.Wallet
+        | ethers.Signer = providers.fuji
 ): Promise<string> {
     // Get chain factory contract address from router
-    const router = getRouterContract(providers.fuji, version)
+    const router = getRouterContract(version, wallet)
 
     let optionChainFactoryAddress = undefined
     switch (version) {
@@ -370,43 +374,45 @@ export async function computeOptionChainAddress(
  * Help construct DeliverOptionParams object that can be passed to the Arrow API to submit an option order.
  *
  * @param optionOrderParams Object containing parameters necesssary in computing parameters for submitting an option order.
- * @param wallet Wallet with which you want to submit the option order.
  * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param wallet Wallet with which you want to submit the option order.
  * @returns JSON that contains the variables necessary in completing the option order.
  */
 export async function prepareDeliverOptionParams(
     optionOrderParams: OptionOrderParams,
-    wallet: ethers.Wallet | ethers.Signer,
-    version = Version.V3
+    version = Version.V3,
+    wallet: ethers.Wallet | ethers.Signer
 ): Promise<DeliverOptionParams> {
     // Get stablecoin decimals
     const stablecoinDecimals = await (
-        await getStablecoinContract(wallet, version)
+        await getStablecoinContract(version, wallet)
     ).decimals()
 
     // Define scope for variables
     const thresholdPrice = ethers.utils.parseUnits(
-        optionOrderParams.thresholdPrice.toString(),
+        optionOrderParams.thresholdPrice!.toString(),
         stablecoinDecimals
     )
     const unixExpiration = getExpirationTimestamp(
         optionOrderParams.expiration
     ).unixTimestamp
-    let bigNumberStrike = undefined
-    let formattedStrike = undefined
-    let strikeType = undefined
+    const strikes = optionOrderParams.strike.map(
+        (strike) => strike.toFixed(2)
+    )
+    const bigNumberStrike = strikes.map((strike) =>
+        ethers.utils.parseUnits(strike, stablecoinDecimals)
+    )
+    const formattedStrike = strikes.join("|")
 
+    let intQuantity = undefined
     switch (version) {
         case Version.V3:
+            intQuantity = optionOrderParams.quantity!
+
+            break
         case Version.COMPETITION:
-            const strikes = (optionOrderParams.strike as number[]).map(
-                (strike) => strike.toFixed(2)
-            )
-            bigNumberStrike = strikes.map((strike) =>
-                ethers.utils.parseUnits(strike, stablecoinDecimals)
-            )
-            formattedStrike = strikes.join("|")
-            strikeType = "uint256[2]"
+            intQuantity = optionOrderParams.quantity! * quantityScaleFactor            
+
             break
         default:
             throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getStablecoinContract`
@@ -415,15 +421,15 @@ export async function prepareDeliverOptionParams(
     // Hash and sign the option order parameters for on-chain verification
     const hashedValues = ethers.utils.solidityKeccak256(
         [
-            "bool",     // buyFlag - Boolean to indicate whether this is a buy (true) or sell (false).
-            "string",   // ticker - String to indicate a particular asset ("AVAX", "ETH", or "BTC").
-            "uint256",  // expiration - Date in Unix timestamp. Must be 8:00 AM UTC (e.g. 1643097600 for January 25th, 2022).
-            "uint256",  // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
-            strikeType, // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
-            "string",   // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
-            "uint256",  // contractType - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
-            "uint256",  // quantity - Integer number of contracts desired in the order. Has to be scaled by supported decimals (10**2).
-            "uint256"   // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+            "bool",       // buyFlag - Boolean to indicate whether this is a buy (true) or sell (false).
+            "string",     // ticker - String to indicate a particular asset ("AVAX", "ETH", or "BTC").
+            "uint256",    // expiration - Date in Unix timestamp. Must be 8:00 AM UTC (e.g. 1643097600 for January 25th, 2022).
+            "uint256",    // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+            "uint256[2]", // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
+            "string",     // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
+            "uint256",    // contractType - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+            "uint256",    // quantity - Integer number of contracts desired in the order. Has to be scaled by supported decimals (10**2).
+            "uint256"     // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
         ],
         [
             optionOrderParams.orderType === OrderType.LONG_OPEN,
@@ -433,7 +439,7 @@ export async function prepareDeliverOptionParams(
             bigNumberStrike,
             formattedStrike,
             optionOrderParams.contractType,
-            optionOrderParams.quantity!,
+            intQuantity,
             thresholdPrice
         ]
     )
@@ -441,7 +447,7 @@ export async function prepareDeliverOptionParams(
         ethers.utils.arrayify(hashedValues)
     ) // Note that we are signing a message, not a transaction
 
-    const value = optionOrderParams.thresholdPrice * optionOrderParams.quantity!
+    const value = optionOrderParams.thresholdPrice! * optionOrderParams.quantity!
 
     const amountToApprove = ethers.BigNumber.from(
         ethers.utils.parseUnits(value.toString(), stablecoinDecimals)

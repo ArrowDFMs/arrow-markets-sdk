@@ -13,7 +13,8 @@ import {
     DeliverOptionParams,
     Greeks,
     Interval,
-    Option,
+    OptionContract,
+    OptionOrderParams,
     OrderType,
     Ticker,
     Version
@@ -39,6 +40,8 @@ import {
     getStablecoinContract,
     getTimeUTC,
     getUnderlierPriceAndHistory,
+    getUnderlierPriceHistory,
+    getUnderlierSpotPrice,
     isValidVersion,
     prepareDeliverOptionParams
 } from "./utilities"
@@ -55,26 +58,26 @@ import {
  * @returns Float that represents an estimate of the option price using Arrow's pricing model.
  */
 export async function estimateOptionPrice(
-    option: Option,
+    optionOrderParams: OptionOrderParams,
     version = Version.V3
 ): Promise<number> {
     // Take strike array and convert into string with format "longStrike|shortStrike"
-    const strike = option.strike.join("|")
+    const strike = optionOrderParams.strike.join("|")
 
     const {
         priceHistory,
         spotPrice
-    } = await getUnderlierPriceAndHistory(option.ticker)
+    } = await getUnderlierPriceAndHistory(optionOrderParams.ticker)
 
     const estimatedOptionPriceResponse = await axios.post(
         urls.api[version] + "/estimate-option-price",
         {
-            order_type: option.orderType,
-            ticker: option.ticker,
-            expiration: option.expiration, // API only takes in readable expirations so it can manually set the UNIX expiration
+            order_type: optionOrderParams.orderType,
+            ticker: optionOrderParams.ticker,
+            expiration: optionOrderParams.expiration, // API only takes in readable expirations so it can manually set the UNIX expiration
             strike: strike,
-            contract_type: option.contractType,
-            quantity: option.quantity,
+            contract_type: optionOrderParams.contractType,
+            quantity: optionOrderParams.quantity,
             price_history: priceHistory,
             spot_price: spotPrice
         }
@@ -95,26 +98,26 @@ export async function estimateOptionPrice(
  * @returns JSON object that contains an estimate of the option price using Arrow's pricing model as well as the greeks associated with the specified option.
  */
 export async function estimateOptionPriceAndGreeks(
-    option: Option,
+    optionOrderParams: OptionOrderParams,
     version = Version.V3
 ): Promise<Record<string, any>> {
     // Take strike array and convert into string with format "longStrike|shortStrike"
-    const strike = option.strike.join("|")
+    const strike = optionOrderParams.strike.join("|")
 
     const {
         priceHistory,
         spotPrice
-    } = await getUnderlierPriceAndHistory(option.ticker)
+    } = await getUnderlierPriceAndHistory(optionOrderParams.ticker)
 
     const estimatedOptionPriceResponse = await axios.post(
         urls.api[version] + "/estimate-option-price",
         {
-            order_type: option.orderType,
-            ticker: option.ticker,
-            expiration: option.expiration, // API only takes in readable expirations so it can manually set the UNIX expiration
+            order_type: optionOrderParams.orderType,
+            ticker: optionOrderParams.ticker,
+            expiration: optionOrderParams.expiration, // API only takes in readable expirations so it can manually set the UNIX expiration
             strike: strike,
-            contract_type: option.contractType,
-            quantity: option.quantity,
+            contract_type: optionOrderParams.contractType,
+            quantity: optionOrderParams.quantity,
             spot_price: spotPrice,
             price_history: priceHistory,
         }
@@ -163,7 +166,7 @@ export async function getRecommendedOption(
             }
         )
 
-        const recommendedOption: Option = {
+        const recommendedOption: OptionContract = {
             ticker: ticker,
             expiration: readableExpiration,
             strike: recommendedOptionResponse.data.option.strike,
@@ -216,7 +219,7 @@ export async function getStrikeGrid(
     const strikeGrid = []
     for (let i = 0; i < strikeGridResponse.data.options.length; i++) {
         const strikeGridOption = strikeGridResponse.data.options[i]
-        const option: Option = {
+        const option: OptionContract = {
             ticker: ticker,
             expiration: readableExpiration,
             strike: strikeGridOption.strike,
@@ -269,34 +272,38 @@ export async function submitOptionOrder(
 /**
  * Call smart contract function to settle options for a specific option chain on Arrow.
  *
- * @param wallet Wallet with which you want to call the option settlement function.
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
  * @param owner Address of the option owner for whom you are settling.
+ * @param wallet Wallet with which you want to call the option settlement function.
  * @param version Version of Arrow contract suite with which to interact. Default is V3.
  */
 export async function settleOptions(
-  wallet: ethers.Wallet | ethers.Signer,
   ticker: Ticker,
   readableExpiration: string,
-  owner = undefined,
+  owner: string,
+  wallet: ethers.Wallet | ethers.Signer,
   version = Version.V3
 ) {
-    const router = getRouterContract(wallet, version)
+    const router = getRouterContract(version, wallet)
 
     switch (version) {
         case Version.V3:
         case Version.COMPETITION:
+            // Check if on-chain function call would work using `callStatic`
             try {
                 await router.callStatic.settleOptions(
                     owner,
                     ticker,
                     readableExpiration
                 )
-                await router.settleOptions(owner, ticker, readableExpiration)
             } catch (err) {
                 throw new Error("Settlement call would fail on chain.")
             }
+
+            // Send function call on-chain after `callStatic` success
+            await router.settleOptions(owner, ticker, readableExpiration)
+
             break
         default:
             throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
@@ -313,7 +320,7 @@ const arrowsdk = {
     providers,
     addresses,
 
-    // Types
+    // Enums
     ContractType,
     Currency,
     Interval,
@@ -328,6 +335,8 @@ const arrowsdk = {
     getReadableTimestamp,
     getTimeUTC,
     getUnderlierPriceAndHistory,
+    getUnderlierPriceHistory,
+    getUnderlierSpotPrice,
 
     // API functions
     estimateOptionPrice,
