@@ -25,6 +25,7 @@ import {
     addresses,
     providers,
     UNSUPPORTED_VERSION_ERROR,
+    MISSING_PARAMETERS,
     urls
 } from "./constants"
 
@@ -64,24 +65,21 @@ export async function estimateOptionPrice(
     // Take strike array and convert into string with format "longStrike|shortStrike"
     const strike = optionOrderParams.strike.join("|")
 
-    const {
-        priceHistory,
-        spotPrice
-    } = await getUnderlierPriceAndHistory(optionOrderParams.ticker)
-
-    const estimatedOptionPriceResponse = await axios.post(
-        urls.api[version] + "/estimate-option-price",
-        {
-            order_type: optionOrderParams.orderType,
-            ticker: optionOrderParams.ticker,
-            expiration: optionOrderParams.expiration, // API only takes in readable expirations so it can manually set the UNIX expiration
-            strike: strike,
-            contract_type: optionOrderParams.contractType,
-            quantity: optionOrderParams.quantity,
-            price_history: priceHistory,
-            spot_price: spotPrice
-        }
-    )
+   if(optionOrderParams.underlierPriceHistory?.length === 0 || !optionOrderParams.underlierSpotPrice) throw MISSING_PARAMETERS
+    
+   const estimatedOptionPriceResponse = await axios.post(
+      urls.api[version] + "/estimate-option-price",
+      {
+        order_type: optionOrderParams.orderType,
+        ticker: optionOrderParams.ticker,
+        expiration: optionOrderParams.expiration, // API only takes in readable expirations so it can manually set the UNIX expiration
+        strike: strike,
+        contract_type: optionOrderParams.contractType,
+        quantity: optionOrderParams.quantity,
+        price_history: optionOrderParams.underlierPriceHistory,
+        spot_price: optionOrderParams.underlierSpotPrice,
+      }
+    );
 
     const estimatedOptionPrice = parseFloat(
         estimatedOptionPriceResponse.data.option_price.toFixed(6)

@@ -30,7 +30,11 @@ export const coingeckoIDs: Record<string, string> = {
 
 export const UNSUPPORTED_VERSION_ERROR = new Error(
     "Please select a supported contract version."
-)
+);
+
+export const MISSING_PARAMETERS = new Error(
+  "Cannot match an input value to the data type it expects for the value"
+);
 
 export const UNSUPPORTED_EXPIRATION_ERROR = new Error(
     "Please select a Friday expiration date."
