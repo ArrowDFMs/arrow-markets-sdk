@@ -64,10 +64,17 @@ export async function estimateOptionPrice(
     // Take strike array and convert into string with format "longStrike|shortStrike"
     const strike = optionOrderParams.strike.join("|")
 
-    const {
-        priceHistory,
-        spotPrice
-    } = await getUnderlierPriceAndHistory(optionOrderParams.ticker)
+    // Get spot price from optionOrderParams if it is included, otherwise get it from helper function
+    let spotPrice = optionOrderParams.underlierSpotPrice
+    if (spotPrice === undefined) {
+        spotPrice = await getUnderlierSpotPrice(optionOrderParams.ticker)
+    }
+
+    // Get historical prices from optionOrderParams if they are included, otherwise, get them from helper function
+    let priceHistory = optionOrderParams.underlierPriceHistory
+    if (priceHistory === undefined) {
+        priceHistory = await getUnderlierPriceHistory(optionOrderParams.ticker)
+    }
 
     const estimatedOptionPriceResponse = await axios.post(
         urls.api[version] + "/estimate-option-price",
@@ -104,10 +111,17 @@ export async function estimateOptionPriceAndGreeks(
     // Take strike array and convert into string with format "longStrike|shortStrike"
     const strike = optionOrderParams.strike.join("|")
 
-    const {
-        priceHistory,
-        spotPrice
-    } = await getUnderlierPriceAndHistory(optionOrderParams.ticker)
+    // Get spot price from optionOrderParams if it is included, otherwise get it from helper function
+    let spotPrice = optionOrderParams.underlierSpotPrice
+    if (spotPrice === undefined) {
+        spotPrice = await getUnderlierSpotPrice(optionOrderParams.ticker)
+    }
+
+    // Get historical prices from optionOrderParams if they are included, otherwise, get them from helper function
+    let priceHistory = optionOrderParams.underlierPriceHistory
+    if (priceHistory === undefined) {
+        priceHistory = await getUnderlierPriceHistory(optionOrderParams.ticker)
+    }
 
     const estimatedOptionPriceResponse = await axios.post(
         urls.api[version] + "/estimate-option-price",
