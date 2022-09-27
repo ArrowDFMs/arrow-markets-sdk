@@ -39,9 +39,10 @@ import {
     getRouterContract,
     getStablecoinContract,
     getTimeUTC,
-    getUnderlierPriceAndHistory,
     getUnderlierPriceHistory,
     getUnderlierSpotPrice,
+    getUnderlierSpotPriceAndPriceHistory,
+    getUnderlierSpotPriceAndPriceHistoryAndMarketCaps,
     isValidVersion,
     prepareDeliverOptionParams
 } from "./utilities"
@@ -71,10 +72,9 @@ export async function estimateOptionPrice(
     }
 
     // Get historical prices from optionOrderParams if they are included, otherwise, get them from helper function
-    let _priceHistory = optionOrderParams.underlierPriceHistory
-    if (_priceHistory === undefined) {
-        const { priceHistory } = await getUnderlierPriceHistory(optionOrderParams.ticker)
-        _priceHistory = priceHistory
+    let priceHistory = optionOrderParams.underlierPriceHistory
+    if (priceHistory === undefined) {
+        priceHistory = await getUnderlierPriceHistory(optionOrderParams.ticker)
     }
 
     const estimatedOptionPriceResponse = await axios.post(
@@ -86,7 +86,7 @@ export async function estimateOptionPrice(
             strike: strike,
             contract_type: optionOrderParams.contractType,
             quantity: optionOrderParams.quantity,
-            price_history: _priceHistory,
+            price_history: priceHistory,
             spot_price: spotPrice
         }
     )
@@ -119,10 +119,9 @@ export async function estimateOptionPriceAndGreeks(
     }
 
     // Get historical prices from optionOrderParams if they are included, otherwise, get them from helper function
-    let _priceHistory = optionOrderParams.underlierPriceHistory
-    if (_priceHistory === undefined) {
-        const  { priceHistory } = await getUnderlierPriceHistory(optionOrderParams.ticker)
-        _priceHistory = priceHistory
+    let priceHistory = optionOrderParams.underlierPriceHistory
+    if (priceHistory === undefined) {
+        priceHistory = await getUnderlierPriceHistory(optionOrderParams.ticker)
     }
 
     const estimatedOptionPriceResponse = await axios.post(
@@ -135,7 +134,7 @@ export async function estimateOptionPriceAndGreeks(
             contract_type: optionOrderParams.contractType,
             quantity: optionOrderParams.quantity,
             spot_price: spotPrice,
-            price_history: _priceHistory,
+            price_history: priceHistory,
         }
     )
 
@@ -166,7 +165,7 @@ export async function getRecommendedOption(
     const {
         spotPrice,
         priceHistory
-    } = await getUnderlierPriceAndHistory(ticker)
+    } = await getUnderlierSpotPriceAndPriceHistory(ticker)
 
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
@@ -216,7 +215,7 @@ export async function getStrikeGrid(
     const {
         spotPrice,
         priceHistory
-    } = await getUnderlierPriceAndHistory(ticker)
+    } = await getUnderlierSpotPriceAndPriceHistory(ticker)
 
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
@@ -350,9 +349,10 @@ const arrowsdk = {
     getExpirationTimestamp,
     getReadableTimestamp,
     getTimeUTC,
-    getUnderlierPriceAndHistory,
     getUnderlierPriceHistory,
     getUnderlierSpotPrice,
+    getUnderlierSpotPriceAndPriceHistory,
+    getUnderlierSpotPriceAndPriceHistoryAndMarketCaps,
 
     // API functions
     estimateOptionPrice,
