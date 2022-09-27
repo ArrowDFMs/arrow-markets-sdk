@@ -214,7 +214,7 @@ export async function getUnderlierPriceHistory(
 
     const priceHistory = prices.map((entry) => entry[1])
 
-    return priceHistory
+    return {priceHistory, market_caps}
 }
 
 /**
@@ -231,11 +231,12 @@ export async function getUnderlierPriceAndHistory(
     currency = Currency.USD
 ) {
     const spotPrice = await getUnderlierSpotPrice(ticker)
-    const priceHistory = await getUnderlierPriceHistory(ticker, days, currency)
+    const {priceHistory, market_caps} = await getUnderlierPriceHistory(ticker, days, currency)
 
     return {
         spotPrice,
-        priceHistory
+        priceHistory,
+        market_caps
     }
 }
 
