@@ -195,7 +195,7 @@ export async function getUnderlierPriceHistory(
 
     const {
         data: {
-            marketCaps,
+            market_caps,
             prices
         }
     } = await axios.get<GetUnderlierHistoricalPricesResponse>(
@@ -214,7 +214,7 @@ export async function getUnderlierPriceHistory(
 
     const priceHistory = prices.map((entry) => entry[1])
 
-    return {priceHistory, marketCaps}
+    return {priceHistory, marketCaps: market_caps}
 }
 
 /**

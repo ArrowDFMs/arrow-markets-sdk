@@ -71,9 +71,10 @@ export async function estimateOptionPrice(
     }
 
     // Get historical prices from optionOrderParams if they are included, otherwise, get them from helper function
-    let priceHistory = optionOrderParams.underlierPriceHistory
-    if (priceHistory === undefined) {
-        priceHistory = await getUnderlierPriceHistory(optionOrderParams.ticker)
+    let _priceHistory = optionOrderParams.underlierPriceHistory
+    if (_priceHistory === undefined) {
+        const { priceHistory } = await getUnderlierPriceHistory(optionOrderParams.ticker)
+        _priceHistory = priceHistory
     }
 
     const estimatedOptionPriceResponse = await axios.post(
@@ -85,7 +86,7 @@ export async function estimateOptionPrice(
             strike: strike,
             contract_type: optionOrderParams.contractType,
             quantity: optionOrderParams.quantity,
-            price_history: priceHistory,
+            price_history: _priceHistory,
             spot_price: spotPrice
         }
     )
@@ -118,9 +119,10 @@ export async function estimateOptionPriceAndGreeks(
     }
 
     // Get historical prices from optionOrderParams if they are included, otherwise, get them from helper function
-    let priceHistory = optionOrderParams.underlierPriceHistory
-    if (priceHistory === undefined) {
-        priceHistory = await getUnderlierPriceHistory(optionOrderParams.ticker)
+    let _priceHistory = optionOrderParams.underlierPriceHistory
+    if (_priceHistory === undefined) {
+        const  { priceHistory } = await getUnderlierPriceHistory(optionOrderParams.ticker)
+        _priceHistory = priceHistory
     }
 
     const estimatedOptionPriceResponse = await axios.post(
@@ -133,7 +135,7 @@ export async function estimateOptionPriceAndGreeks(
             contract_type: optionOrderParams.contractType,
             quantity: optionOrderParams.quantity,
             spot_price: spotPrice,
-            price_history: priceHistory,
+            price_history: _priceHistory,
         }
     )
 
