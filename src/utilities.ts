@@ -214,7 +214,7 @@ export async function getUnderlierPriceHistory(
 
     const priceHistory = prices.map((entry) => entry[1])
 
-    return {priceHistory, marketCaps: market_caps}
+    return { priceHistory, marketCaps: market_caps }
 }
 
 /**
