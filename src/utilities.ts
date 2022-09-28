@@ -212,7 +212,7 @@ export async function getUnderlierPriceHistory(
     )
 
     const priceHistory = prices.map((entry) => ({
-        date: entry[0],
+        date: getReadableTimestamp(entry[0]),
         price: entry[1]
       }))
 
@@ -254,7 +254,7 @@ export async function getUnderlierPriceHistory(
     )
 
     const priceHistory = prices.map((entry) => ({
-        date: entry[0],
+        date: getReadableTimestamp(entry[0]),
         price: entry[1]
       }))
 
