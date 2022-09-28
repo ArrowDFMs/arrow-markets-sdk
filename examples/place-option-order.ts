@@ -45,7 +45,7 @@ async function main() {
     
     // Get current price of underlying asset from Binance/CryptoWatch and 12 weeks of price history from CoinGecko.
     option.underlierSpotPrice = await arrowsdk.getUnderlierSpotPrice(option.ticker)
-    option.underlierPriceHistory = await arrowsdk.getUnderlierPriceHistory(option.ticker)
+    option.underlierPriceHistory = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
     
     // Estimate option price by making API request.
     const optionOrderParams: OptionOrderParams = {

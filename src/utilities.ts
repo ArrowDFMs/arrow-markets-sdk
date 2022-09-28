@@ -179,52 +179,14 @@ export async function getUnderlierSpotPrice(ticker: Ticker) {
 }
 
 /**
- * Get the price history for the underlying asset using CoinGecko.
- * 
- * @param ticker Ticker of underlying asset.
- * @param days Number of days worth of historical data to get from CoinGecko. Default is 84 days to match the API.
- * @param currency Currency to which we wish to convert the value. Default is USD to match the API.
- * @returns Price history of the underlying asset as an array of numbers (floats).
- */
-export async function getUnderlierPriceHistory(
-    ticker: Ticker,
-    days = 84,
-    currency = Currency.USD
-) {
-    const underlierID = coingeckoIDs[ticker]
-
-    const {
-        data: {
-            prices
-        }
-    } = await axios.get<GetUnderlierHistoricalPricesResponse>(
-        `https://api.coingecko.com/api/v3/coins/${underlierID}/market_chart`,
-        {
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json"
-            },
-            params: {
-                days,
-                vs_currency: currency
-            }
-        }
-    )
-
-    const priceHistory = prices.map((entry) => entry[1])
-
-    return priceHistory
-}
-
-/**
  * Get the price history and market caps for the underlying asset using CoinGecko.
  * 
  * @param ticker Ticker of underlying asset.
  * @param days Number of days worth of historical data to get from CoinGecko. Default is 84 days to match the API.
  * @param currency Currency to which we wish to convert the value. Default is USD to match the API.
- * @returns Price history of the underlying asset as an array of numbers (floats).
+ * @returns Price history and market caps of the underlying asset as 2D arrays of dates and values (floats).
  */
- export async function getUnderlierPriceHistoryAndMarketCaps(
+ export async function getUnderlierMarketChart(
     ticker: Ticker,
     days = 84,
     currency = Currency.USD
@@ -250,53 +212,35 @@ export async function getUnderlierPriceHistory(
         }
     )
 
-    const priceHistory = prices.map((entry) => entry[1])
+    const priceHistory = prices.map((entry) => {
+        return {
+            date: getReadableTimestamp(entry[0]),
+            price: entry[1]
+        }
+    })
 
     return { priceHistory, marketCaps }
 }
 
 /**
- * Get the spot price and historical prices for the underlying asset using CoinGecko.
+ * Get the spot price and market chart (refer to getUnderlierMarketChart) for the underlying asset using CoinGecko.
  * 
  * @param ticker Ticker of underlying asset.
  * @param days Number of days worth of historical data to get from CoinGecko. Default is 84 days to match the API.
  * @param currency Currency to which we wish to convert the value. Default is USD to match the API.
- * @returns JSON object that contains the spot and historical prices of the underlying asset.
+ * @returns JSON object that contains the spot price and market chart information of the underlying asset.
  */
-export async function getUnderlierSpotPriceAndPriceHistory(
+export async function getUnderlierSpotPriceAndMarketChart(
     ticker: Ticker,
     days = 84,
     currency = Currency.USD
 ) {
     const spotPrice = await getUnderlierSpotPrice(ticker)
-    const priceHistory = await getUnderlierPriceHistory(ticker, days, currency)
+    const marketChart = await getUnderlierMarketChart(ticker, days, currency)
 
     return {
         spotPrice,
-        priceHistory
-    }
-}
-
-/**
- * Get the spot price, historical prices, and market caps for the underlying asset using CoinGecko.
- * 
- * @param ticker Ticker of underlying asset.
- * @param days Number of days worth of historical data to get from CoinGecko. Default is 84 days to match the API.
- * @param currency Currency to which we wish to convert the value. Default is USD to match the API.
- * @returns JSON object that contains the spot and historical prices of the underlying asset.
- */
- export async function getUnderlierSpotPriceAndPriceHistoryAndMarketCaps(
-    ticker: Ticker,
-    days = 84,
-    currency = Currency.USD
-) {
-    const spotPrice = await getUnderlierSpotPrice(ticker)
-    const { priceHistory, marketCaps } = await getUnderlierPriceHistoryAndMarketCaps(ticker, days, currency)
-
-    return {
-        spotPrice,
-        priceHistory,
-        marketCaps
+        marketChart
     }
 }
 
@@ -527,3 +471,4 @@ export async function prepareDeliverOptionParams(
         bigNumberThresholdPrice: thresholdPrice
     }
 }
+

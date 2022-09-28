@@ -1,6 +1,6 @@
 {
     "name": "@arrow-markets/arrow-sdk",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "description": "This SDK is meant to make it easier for developers to connect to the Arrow API.",
     "main": "lib/src/arrow-sdk.js",
     "types": "lib/src/arrow-sdk.d.ts",
