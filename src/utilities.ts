@@ -211,7 +211,10 @@ export async function getUnderlierPriceHistory(
         }
     )
 
-    const priceHistory = prices.map((entry) => entry[1])
+    const priceHistory = prices.map((entry) => ({
+        date: entry[0],
+        price: entry[1]
+      }))
 
     return priceHistory
 }
@@ -250,7 +253,10 @@ export async function getUnderlierPriceHistory(
         }
     )
 
-    const priceHistory = prices.map((entry) => entry[1])
+    const priceHistory = prices.map((entry) => ({
+        date: entry[0],
+        price: entry[1]
+      }))
 
     return { priceHistory, marketCaps }
 }
@@ -527,3 +533,4 @@ export async function prepareDeliverOptionParams(
         bigNumberThresholdPrice: thresholdPrice
     }
 }
+

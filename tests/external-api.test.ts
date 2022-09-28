@@ -10,7 +10,7 @@ describe('External API Request Tests', () => {
     test('Expects to get price history', async () => {
         const priceHistory = await arrowsdk.getUnderlierPriceHistory(arrowsdk.Ticker.AVAX)
 
-        expect(typeof(priceHistory[0])).toBe('number')
+        expect(typeof(priceHistory[0].price)).toBe('number')
     })
 
     test('Expects to get price history and market cap', async () => {
@@ -20,7 +20,7 @@ describe('External API Request Tests', () => {
         expect(keys).toContain('priceHistory')
         expect(keys).toContain('marketCaps')
 
-        expect(typeof(coinGeckoPriceHistoryAndMarketCapResponse.priceHistory[0])).toBe('number')
+        expect(typeof(coinGeckoPriceHistoryAndMarketCapResponse.priceHistory[0].price)).toBe('number')
         expect(typeof(coinGeckoPriceHistoryAndMarketCapResponse.marketCaps[0][0])).toBe('number')
     })
 
@@ -31,6 +31,6 @@ describe('External API Request Tests', () => {
         } = await arrowsdk.getUnderlierSpotPriceAndPriceHistory(arrowsdk.Ticker.ETH)
 
         expect(typeof(spotPrice)).toBe('number')
-        expect(typeof(priceHistory[0])).toBe('number')
+        expect(typeof(priceHistory[0].price)).toBe('number')
     })
 })
