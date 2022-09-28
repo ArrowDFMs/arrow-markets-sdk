@@ -100,7 +100,7 @@ export interface GetUnderlierHistoricalPricesRequest {
 }
 
 export interface GetUnderlierHistoricalPricesResponse {
-    marketCaps: number[][];
+    market_caps: number[][];
     prices: number[][];
     total_volumes: number[][];
 }

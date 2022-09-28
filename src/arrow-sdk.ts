@@ -39,9 +39,10 @@ import {
     getRouterContract,
     getStablecoinContract,
     getTimeUTC,
-    getUnderlierPriceAndHistory,
     getUnderlierPriceHistory,
     getUnderlierSpotPrice,
+    getUnderlierSpotPriceAndPriceHistory,
+    getUnderlierSpotPriceAndPriceHistoryAndMarketCaps,
     isValidVersion,
     prepareDeliverOptionParams
 } from "./utilities"
@@ -164,7 +165,7 @@ export async function getRecommendedOption(
     const {
         spotPrice,
         priceHistory
-    } = await getUnderlierPriceAndHistory(ticker)
+    } = await getUnderlierSpotPriceAndPriceHistory(ticker)
 
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
@@ -214,7 +215,7 @@ export async function getStrikeGrid(
     const {
         spotPrice,
         priceHistory
-    } = await getUnderlierPriceAndHistory(ticker)
+    } = await getUnderlierSpotPriceAndPriceHistory(ticker)
 
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
@@ -348,9 +349,10 @@ const arrowsdk = {
     getExpirationTimestamp,
     getReadableTimestamp,
     getTimeUTC,
-    getUnderlierPriceAndHistory,
     getUnderlierPriceHistory,
     getUnderlierSpotPrice,
+    getUnderlierSpotPriceAndPriceHistory,
+    getUnderlierSpotPriceAndPriceHistoryAndMarketCaps,
 
     // API functions
     estimateOptionPrice,
