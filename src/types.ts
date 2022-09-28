@@ -62,8 +62,8 @@ export interface OptionContract {
     price?: number; // Float number that indicates the price of 1 option.
     underlierSpotPrice?: number; // Most up-to-date price of underlying asset.
     underlierPriceHistory?: {
-    date: any;
-    price: number;
+        date: any;
+        price: number;
     }[]; // Prices of underlying asset over some period of history.
     greeks?: Greeks; // Greeks interface that specifies which greeks are tied to this option.
 }
