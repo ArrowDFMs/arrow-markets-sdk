@@ -214,7 +214,7 @@ export async function getUnderlierSpotPrice(ticker: Ticker) {
 
     const priceHistory = prices.map((entry) => {
         return {
-            date: getReadableTimestamp(entry[0]),
+            date: entry[0],
             price: entry[1]
         }
     })
