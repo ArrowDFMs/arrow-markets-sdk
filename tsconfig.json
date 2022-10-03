@@ -8,6 +8,6 @@
         "resolveJsonModule": true,
         "esModuleInterop": true
     },
-    "include": ["src", "node_modules/dayjs/plugin/utc.d.ts"],
+    "include": ["src"],
     "exclude": ["node_modules", "examples", "docs", "build"]
 }
