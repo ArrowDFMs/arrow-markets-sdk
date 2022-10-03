@@ -310,8 +310,8 @@ export function getTimeUTC(millisTimestamp: number) {
  * @returns JSON object that contains a moment object as well as unix and millisecond timestamp representations of the readable timestamp.
  */
 export function getExpirationTimestamp(readableExpiration: string): Record<string, any> {
-    // TO DO SET THE HOUR TO 8
     const expiration = dayjs(readableExpiration, 'MMDDYYYY').hour(4)
+    
     if (!isFriday(expiration.unix())) throw UNSUPPORTED_EXPIRATION_ERROR
 
     return {
