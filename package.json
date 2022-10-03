@@ -29,9 +29,10 @@
     "homepage": "https://github.com/ArrowDFMs/arrow-markets-sdk#readme",
     "dependencies": {
         "axios": "0.24.0",
+        "dayjs": "^1.11.5",
+        "dayjs-plugin-utc": "^0.1.2",
         "dotenv": "10.0.0",
-        "ethers": "5.5.2",
-        "moment": "2.29.3"
+        "ethers": "5.5.2"
     },
     "devDependencies": {
         "@types/jest": "29.0.3",
