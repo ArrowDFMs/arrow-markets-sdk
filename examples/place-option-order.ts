@@ -40,7 +40,7 @@ async function main() {
         "ticker": Ticker.AVAX,
         "expiration": readableExpiration, // The next nearest friday from today
         "strike": [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
-        "contractType": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+        "contract_type": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
     }
     
     // Get current price of underlying asset from Binance/CryptoWatch and 12 weeks of price history from CoinGecko.
@@ -51,7 +51,7 @@ async function main() {
     const optionOrderParams: OptionOrderParams = {
         "quantity": 2.0, // 2.0 contracts
         ...option,
-        "orderType": OrderType.LONG_OPEN
+        "order_type": OrderType.LONG_OPEN
     }
     const estimatedOptionPrice = await arrowsdk.estimateOptionPrice(optionOrderParams, version)
 
@@ -67,7 +67,7 @@ async function main() {
     const optionChainAddress = await arrowsdk.computeOptionChainAddress(option.ticker, option.expiration, version)
 
     // Approval circuit if the order is a "buy" order
-    if (deliverOptionParams.orderType === OrderType.LONG_OPEN) {
+    if (deliverOptionParams.order_type === OrderType.LONG_OPEN) {
         // Get user's balance of stablecoin
         const userBalance = await stablecoin.balanceOf(wallet.address)
 
