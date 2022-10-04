@@ -59,7 +59,7 @@ import {
  */
 export async function estimateOptionPrice(
     optionOrderParams: OptionOrderParams,
-    version = Version.V3
+    version = Version.V4
 ): Promise<number> {
     // Take strike array and convert into string with format "longStrike|shortStrike"
     const strike = optionOrderParams.strike.join("|")
@@ -107,7 +107,7 @@ export async function estimateOptionPrice(
  */
 export async function estimateOptionPriceAndGreeks(
     optionOrderParams: OptionOrderParams,
-    version = Version.V3
+    version = Version.V4
 ): Promise<Record<string, any>> {
     // Take strike array and convert into string with format "longStrike|shortStrike"
     const strike = optionOrderParams.strike.join("|")
@@ -161,7 +161,7 @@ export async function getRecommendedOption(
   ticker: Ticker,
   readableExpiration: string,
   forecast: number,
-  version = Version.V3
+  version = Version.V4
 ) {
     const {
         spotPrice,
@@ -211,7 +211,7 @@ export async function getStrikeGrid(
   ticker: Ticker,
   readableExpiration: string,
   contractType: number,
-  version = Version.V3
+  version = Version.V4
 ) {
     const {
         spotPrice,
@@ -258,7 +258,7 @@ export async function getStrikeGrid(
  */
 export async function submitOptionOrder(
     deliverOptionParams: DeliverOptionParams,
-    version = Version.V3
+    version = Version.V4
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
@@ -299,12 +299,13 @@ export async function settleOptions(
   readableExpiration: string,
   owner: string,
   wallet: ethers.Wallet | ethers.Signer,
-  version = Version.V3
+  version = Version.V4
 ) {
     const router = getRouterContract(version, wallet)
 
     switch (version) {
         case Version.V3:
+        case Version.V4:
         case Version.COMPETITION:
             // Check if on-chain function call would work using `callStatic`
             try {

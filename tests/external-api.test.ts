@@ -1,14 +1,16 @@
+import { ethers } from "ethers"
+import moment from "moment"
 import arrowsdk from "../src/arrow-sdk"
 import { UNSUPPORTED_EXPIRATION_ERROR } from "../src/constants"
-import { Version } from "../src/types"
-import { getExpirationTimestamp, isFriday, isValidVersion } from "../src/utilities"
+import { ContractType, OptionContract, OptionOrderParams, OrderType, Ticker, Version } from "../src/types"
+import { isFriday } from "../src/utilities"
 
 describe('External API Request Tests', () => {
     test('Computes option chain address', async () => {
         const optionChainAddress = await arrowsdk.computeOptionChainAddress(arrowsdk.Ticker.BTC, '10072022')
         
         expect(typeof(optionChainAddress)).toBe('string')
-        expect(optionChainAddress).toBe('0xa2E6801f836167C57C8562B7870ad276Fa1e7ec5')
+        expect(optionChainAddress).toBe('0x2967bb4fa8e6744E1c9C4131705795A29c00caBB')
     })
 
     test('Expects to get single spot price', async () => {
@@ -79,7 +81,7 @@ describe('External API Request Tests', () => {
 
     test('Expects UNSUPPORTED_EXPIRATION_ERROR when expiration is not a Friday', async () => {
         await expect(async () => { 
-            await getExpirationTimestamp('10042022'); 
+            await arrowsdk.getExpirationTimestamp('10042022'); 
         }).rejects.toThrowError(UNSUPPORTED_EXPIRATION_ERROR);
     })
 
@@ -93,11 +95,45 @@ describe('External API Request Tests', () => {
     })
 
     test('Expects to determine if version is valid', async () => {
-        const valid = isValidVersion(Version.V3)
-        const invalid = isValidVersion('INVALID' as Version)
+        const valid = arrowsdk.isValidVersion(Version.V3)
+        const invalid = arrowsdk.isValidVersion('INVALID' as Version)
         
         expect(invalid).toBe(false)
         expect(valid).toBe(true)
 
+    })
+
+    test('Excepts to prepare deliver option params', async () => {
+         // Option order parameters
+         // Dummy testing account
+        const wallet = new ethers.Wallet('65acf45f04d6c793712caa5aba61a9e3d2f9194e1aae129f9ca6fe39a32d159f', arrowsdk.providers.fuji)
+
+        const nextNearestFriday = moment.utc().add(1, 'week').set('day', 5)
+
+        const readableExpiration = nextNearestFriday.format('MMDDYYYY')
+        
+        const option: OptionContract = {
+            "ticker": Ticker.AVAX,
+            "expiration": readableExpiration, // The next nearest friday from today
+            "strike": [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
+            "contractType": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+        }
+        
+        // Get current price of underlying asset from Binance/CryptoWatch and 12 weeks of price history from CoinGecko.
+        option.underlierSpotPrice = await arrowsdk.getUnderlierSpotPrice(option.ticker)
+        option.underlierPriceHistory = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
+        
+        // Estimate option price by making API request.
+        const optionOrderParams: OptionOrderParams = {
+            "quantity": 2.0, // 2.0 contracts
+            ...option,
+            "orderType": OrderType.LONG_OPEN
+        }
+
+        optionOrderParams.thresholdPrice = 1.0
+
+        const deliverOptionParams = await arrowsdk.prepareDeliverOptionParams(optionOrderParams,Version.V4,wallet)
+        
+        expect(deliverOptionParams).toBeDefined()
     })
 })
