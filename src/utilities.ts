@@ -444,13 +444,13 @@ export async function prepareDeliverOptionParams(
             "uint256"     // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
         ],
         [
-            optionOrderParams.orderType === OrderType.LONG_OPEN,
+            optionOrderParams.order_type === OrderType.LONG_OPEN,
             optionOrderParams.ticker,
             unixExpiration,
             optionOrderParams.expiration,
             bigNumberStrike,
             formattedStrike,
-            optionOrderParams.contractType,
+            optionOrderParams.contract_type,
             intQuantity,
             thresholdPrice
         ]

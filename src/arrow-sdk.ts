@@ -65,13 +65,13 @@ export async function estimateOptionPrice(
     const strike = optionOrderParams.strike.join("|")
 
     // Get spot price from optionOrderParams if it is included, otherwise get it from helper function
-    let spotPrice = optionOrderParams.underlierSpotPrice
+    let spotPrice = optionOrderParams.spot_price
     if (spotPrice === undefined) {
         spotPrice = await getUnderlierSpotPrice(optionOrderParams.ticker)
     }
 
     // Get historical prices from optionOrderParams if they are included, otherwise, get them from helper function
-    let priceHistory = optionOrderParams.underlierPriceHistory
+    let priceHistory = optionOrderParams.price_history
     if (priceHistory === undefined) {
         const marketChart = await getUnderlierMarketChart(optionOrderParams.ticker)
         priceHistory = marketChart.priceHistory
@@ -80,11 +80,11 @@ export async function estimateOptionPrice(
     const estimatedOptionPriceResponse = await axios.post(
         urls.api[version] + "/estimate-option-price",
         {
-            order_type: optionOrderParams.orderType,
+            order_type: optionOrderParams.order_type,
             ticker: optionOrderParams.ticker,
             expiration: optionOrderParams.expiration, // API only takes in readable expirations so it can manually set the UNIX expiration
             strike: strike,
-            contract_type: optionOrderParams.contractType,
+            contract_type: optionOrderParams.contract_type,
             quantity: optionOrderParams.quantity,
             price_history: priceHistory.map(entry => entry.price),
             spot_price: spotPrice
@@ -113,13 +113,13 @@ export async function estimateOptionPriceAndGreeks(
     const strike = optionOrderParams.strike.join("|")
 
     // Get spot price from optionOrderParams if it is included, otherwise get it from helper function
-    let spotPrice = optionOrderParams.underlierSpotPrice
+    let spotPrice = optionOrderParams.spot_price
     if (spotPrice === undefined) {
         spotPrice = await getUnderlierSpotPrice(optionOrderParams.ticker)
     }
 
     // Get historical prices from optionOrderParams if they are included, otherwise, get them from helper function
-    let priceHistory = optionOrderParams.underlierPriceHistory
+    let priceHistory = optionOrderParams.price_history
     if (priceHistory === undefined) {
         const marketChart = await getUnderlierMarketChart(optionOrderParams.ticker)
         priceHistory = marketChart.priceHistory
@@ -128,11 +128,11 @@ export async function estimateOptionPriceAndGreeks(
     const estimatedOptionPriceResponse = await axios.post(
         urls.api[version] + "/estimate-option-price",
         {
-            order_type: optionOrderParams.orderType,
+            order_type: optionOrderParams.order_type,
             ticker: optionOrderParams.ticker,
             expiration: optionOrderParams.expiration, // API only takes in readable expirations so it can manually set the UNIX expiration
             strike: strike,
-            contract_type: optionOrderParams.contractType,
+            contract_type: optionOrderParams.contract_type,
             quantity: optionOrderParams.quantity,
             spot_price: spotPrice,
             price_history: priceHistory.map(entry => entry.price),
@@ -186,7 +186,7 @@ export async function getRecommendedOption(
             ticker: ticker,
             expiration: readableExpiration,
             strike: recommendedOptionResponse.data.option.strike,
-            contractType: recommendedOptionResponse.data.option.contract_type,
+            contract_type: recommendedOptionResponse.data.option.contract_type,
             price: recommendedOptionResponse.data.option.price,
             greeks: recommendedOptionResponse.data.option.greeks
         }
@@ -202,7 +202,7 @@ export async function getRecommendedOption(
  *
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
- * @param contractType // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+ * @param contract_type // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
  * @param version Version of Arrow contract suite with which to interact. Default is V3.
  * @returns Array of Option objects with optional price and greeks parameters populated.
  */
@@ -210,7 +210,7 @@ export async function getStrikeGrid(
   order_type: number,
   ticker: Ticker,
   readableExpiration: string,
-  contractType: number,
+  contract_type: number,
   version = Version.V4
 ) {
     const {
@@ -226,7 +226,7 @@ export async function getStrikeGrid(
             order_type: order_type,
             ticker: ticker,
             expiration: readableExpiration,
-            contract_type: contractType,
+            contract_type: contract_type,
             spot_price: spotPrice,
             price_history: marketChart.priceHistory.map(entry => entry.price)
         }
@@ -239,7 +239,7 @@ export async function getStrikeGrid(
             ticker: ticker,
             expiration: readableExpiration,
             strike: strikeGridOption.strike,
-            contractType: contractType,
+            contract_type: contract_type,
             price: strikeGridOption.price,
             greeks: strikeGridOption.greeks
         }
@@ -266,11 +266,11 @@ export async function submitOptionOrder(
     const orderSubmissionResponse = await axios.post(
         urls.api[version] + "/submit-order",
         {
-            order_type: deliverOptionParams.orderType,
+            order_type: deliverOptionParams.order_type,
             ticker: deliverOptionParams.ticker,
             expiration: deliverOptionParams.expiration,
             strike: deliverOptionParams.formattedStrike,
-            contract_type: deliverOptionParams.contractType,
+            contract_type: deliverOptionParams.contract_type,
             quantity: deliverOptionParams.quantity,
             threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
             hashed_params: deliverOptionParams.hashedValues,
