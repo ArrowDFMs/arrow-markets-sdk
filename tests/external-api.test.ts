@@ -1,6 +1,6 @@
 import arrowsdk from "../src/arrow-sdk"
 import { UNSUPPORTED_EXPIRATION_ERROR } from "../src/constants"
-import { getExpirationTimestamp } from "../src/utilities"
+import { getExpirationTimestamp, isFriday } from "../src/utilities"
 
 describe('External API Request Tests', () => {
     test('Expects to get single spot price', async () => {
@@ -18,7 +18,7 @@ describe('External API Request Tests', () => {
         expect(typeof(marketChart.marketCaps[0][1])).toBe('number')
     })
 
-    test('Excepts to get spot price and historical prices', async () => {
+    test('Expects to get spot price and historical prices', async () => {
         const {
             spotPrice,
             marketChart
@@ -31,7 +31,7 @@ describe('External API Request Tests', () => {
         expect(typeof(marketChart.marketCaps[0][1])).toBe('number')
     })
 
-    test('Excepts to get current UTC time', async () => {
+    test('Expects to get current UTC time', async () => {
         const currentTimeUTC = await arrowsdk.getCurrentTimeUTC()
 
         expect(typeof(currentTimeUTC.millisTimestamp)).toBe('number')
@@ -39,7 +39,7 @@ describe('External API Request Tests', () => {
         expect(typeof(currentTimeUTC.unixTimestamp)).toBe('number')
     })
 
-    test('Excepts to get readable timestamp', async () => {
+    test('Expects to get readable timestamp', async () => {
         const readableTimestamp = await arrowsdk.getReadableTimestamp(1664879367000)
         
         expect(typeof(readableTimestamp)).toBe('string')
@@ -47,7 +47,7 @@ describe('External API Request Tests', () => {
   
     })
 
-    test('Excepts to get UTC time', async () => {
+    test('Expects to get UTC time', async () => {
         const utcTime = await arrowsdk.getTimeUTC(1664879367000)
        
         expect(typeof(utcTime.unixTimestamp)).toBe('number')
@@ -59,7 +59,7 @@ describe('External API Request Tests', () => {
   
     })
 
-    test('Excepts to get expiration timestamp', async () => {
+    test('Expects to get expiration timestamp', async () => {
         const validExpiration = await arrowsdk.getExpirationTimestamp('10072022')
         
         expect(typeof(validExpiration.unixTimestamp)).toBe('number')
@@ -69,9 +69,18 @@ describe('External API Request Tests', () => {
   
     })
 
-    test('Excepts UNSUPPORTED_EXPIRATION_ERROR when expiration is not a Friday', async () => {
+    test('Expects UNSUPPORTED_EXPIRATION_ERROR when expiration is not a Friday', async () => {
         await expect(async () => { 
             await getExpirationTimestamp('10042022'); 
         }).rejects.toThrowError(UNSUPPORTED_EXPIRATION_ERROR);
+    })
+
+    test('Expects to determine if timestamp is a Friday', async () => {
+        const notFriday = isFriday(1665052167)
+        const friday = isFriday(1665138567)
+        
+        expect(notFriday).toBe(false)
+        expect(friday).toBe(true)
+
     })
 })
