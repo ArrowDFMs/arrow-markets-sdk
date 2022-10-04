@@ -156,18 +156,18 @@ describe('Utility function tests', () => {
             "ticker": Ticker.AVAX,
             "expiration": readableExpiration, // The next nearest friday from today
             "strike": [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
-            "contractType": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+            "contract_type": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
         }
         
         // Get current price of underlying asset from Binance/CryptoWatch and 12 weeks of price history from CoinGecko.
-        option.underlierSpotPrice = await arrowsdk.getUnderlierSpotPrice(option.ticker)
-        option.underlierPriceHistory = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
+        option.spot_price = await arrowsdk.getUnderlierSpotPrice(option.ticker)
+        option.price_history = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
         
         // Estimate option price by making API request.
         const optionOrderParams: OptionOrderParams = {
             "quantity": 2.0, // 2.0 contracts
             ...option,
-            "orderType": OrderType.LONG_OPEN
+            "order_type": OrderType.LONG_OPEN
         }
 
         optionOrderParams.thresholdPrice = 1.0

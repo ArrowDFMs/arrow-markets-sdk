@@ -15,7 +15,7 @@ describe('External API Request Tests', () => {
         const nextNearestFriday = moment.utc().add(1, 'week').set('day', 5)
 
         const readableExpiration = nextNearestFriday.format('MMDDYYYY')
-        console.log('readableExpiration',readableExpiration)
+        
         const option: OptionContract = {
             "ticker": Ticker.AVAX,
             "expiration": readableExpiration, // The next nearest friday from today
