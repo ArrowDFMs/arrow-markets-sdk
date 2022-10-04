@@ -1,8 +1,9 @@
 import arrowsdk from "../lib/src/arrow-sdk"
+import { Ticker } from "../lib/src/types"
 
 async function main() {
-    const stablecoin = await arrowsdk.getStablecoinContract(arrowsdk.Version.V3)
+    const res  = arrowsdk.getExpirationTimestamp('10072022')
 
-    console.log(await stablecoin.name())
+    console.log(res)
 }
 main()

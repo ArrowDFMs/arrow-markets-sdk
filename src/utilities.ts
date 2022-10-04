@@ -51,7 +51,7 @@ import {
  * @returns Local instance of ethers.Contract for the Arrow router contract.
  */
 export function getRouterContract(
-    version = Version.V3,
+    version = Version.V4,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -75,7 +75,7 @@ export function getRouterContract(
  * @returns Local instance of ethers.Contract for the stablecoin contract.
  */
 export async function getStablecoinContract(
-    version = Version.V3,
+    version = Version.V4,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -99,7 +99,7 @@ export async function getStablecoinContract(
  * @returns Local instance of ethers.Contract for the Arrow events contract.
  */
 export async function getEventsContract(
-    version = Version.V3,
+    version = Version.V4,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -123,7 +123,7 @@ export async function getEventsContract(
  * @returns Local instance of ethers.Contract for the Arrow registry contract.
  */
 export async function getRegistryContract(
-    version = Version.V3,
+    version = Version.V4,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -340,7 +340,7 @@ export function isFriday(unixTimestamp: number): boolean {
 export async function computeOptionChainAddress(
     ticker: Ticker,
     readableExpiration: string,
-    version = Version.V3,
+    version = Version.V4,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -351,6 +351,7 @@ export async function computeOptionChainAddress(
 
     let optionChainFactoryAddress = undefined
     switch (version) {
+        case Version.V4:
         case Version.V3:
         case Version.COMPETITION:
             optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
@@ -385,7 +386,7 @@ export async function computeOptionChainAddress(
  */
 export async function prepareDeliverOptionParams(
     optionOrderParams: OptionOrderParams,
-    version = Version.V3,
+    version = Version.V4,
     wallet: ethers.Wallet | ethers.Signer
 ): Promise<DeliverOptionParams> {
     // Get stablecoin decimals
@@ -415,6 +416,7 @@ export async function prepareDeliverOptionParams(
             intQuantity = optionOrderParams.quantity!
 
             break
+        case Version.V4:
         case Version.COMPETITION:
             intQuantity = optionOrderParams.quantity! * quantityScaleFactor            
 
