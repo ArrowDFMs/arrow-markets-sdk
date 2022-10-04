@@ -36,6 +36,8 @@ export const UNSUPPORTED_EXPIRATION_ERROR = new Error(
     "Please select a Friday expiration date."
 )
 
+export const DEFAULT_VERSION = Version.V4
+
 export const urls: any = {
     api: {
         [Version.V3]: "https://fuji-v3-api.arrow.markets/v1",

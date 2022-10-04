@@ -29,6 +29,7 @@ import {
     binanceSymbols,
     bytecodeHashes,
     coingeckoIDs,
+    DEFAULT_VERSION,
     providers,
     quantityScaleFactor,
     secondsPerDay,
@@ -51,12 +52,12 @@ import {
 /**
  * Get the router contract from Arrow's contract suite.
  *
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the router contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow router contract.
  */
 export function getRouterContract(
-    version = Version.V4,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -75,12 +76,12 @@ export function getRouterContract(
 /**
  * Get the stablecoin contract that is associated with Arrow's contract suite.
  *
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the stablecoin contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the stablecoin contract.
  */
 export async function getStablecoinContract(
-    version = Version.V4,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -99,12 +100,12 @@ export async function getStablecoinContract(
 /**
  * Get the events contract from Arrow's contract suite.
  *
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the Arrow events contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow events contract.
  */
 export async function getEventsContract(
-    version = Version.V4,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -123,12 +124,12 @@ export async function getEventsContract(
 /**
  * Get the registry contract from Arrow's registry suite.
  *
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow registry contract.
  */
 export async function getRegistryContract(
-    version = Version.V4,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -338,14 +339,14 @@ export function isFriday(unixTimestamp: number): boolean {
  *
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
  * @returns Address of the option chain corresponding to the passed ticker and expiration.
  */
 export async function computeOptionChainAddress(
     ticker: Ticker,
     readableExpiration: string,
-    version = Version.V4,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -385,13 +386,13 @@ export async function computeOptionChainAddress(
  * Help construct DeliverOptionParams object that can be passed to the Arrow API to submit an option order.
  *
  * @param optionOrderParams Object containing parameters necesssary in computing parameters for submitting an option order.
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to submit the option order.
  * @returns JSON that contains the variables necessary in completing the option order.
  */
 export async function prepareDeliverOptionParams(
     optionOrderParams: OptionOrderParams,
-    version = Version.V4,
+    version = DEFAULT_VERSION,
     wallet: ethers.Wallet | ethers.Signer
 ): Promise<DeliverOptionParams> {
     // Get stablecoin decimals
@@ -401,7 +402,7 @@ export async function prepareDeliverOptionParams(
 
     // Define scope for variables
     const thresholdPrice = ethers.utils.parseUnits(
-        optionOrderParams.thresholdPrice!.toString(),
+        optionOrderParams.thresholdPrice!.toFixed(stablecoinDecimals),
         stablecoinDecimals
     )
     const unixExpiration = getExpirationTimestamp(
@@ -464,7 +465,7 @@ export async function prepareDeliverOptionParams(
     const value = optionOrderParams.thresholdPrice! * optionOrderParams.quantity!
 
     const amountToApprove = ethers.BigNumber.from(
-        ethers.utils.parseUnits(value.toString(), stablecoinDecimals)
+        ethers.utils.parseUnits(value.toFixed(stablecoinDecimals), stablecoinDecimals)
     )
 
     return {
