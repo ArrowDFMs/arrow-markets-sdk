@@ -1,9 +1,21 @@
 import arrowsdk from "../src/arrow-sdk"
-import { ethers } from "ethers"
-import moment from "moment"
 import { UNSUPPORTED_EXPIRATION_ERROR } from "../src/constants"
-import { ContractType, OptionContract, OptionOrderParams, OrderType, Ticker, Version } from "../src/types"
+import { ethers } from "ethers"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+import {
+    ContractType,
+    OptionContract,
+    OptionOrderParams,
+    OrderType,
+    Ticker,
+    Version
+} from "../src/types"
 import { isFriday } from "../src/utilities"
+
+dayjs.extend(utc)
+dayjs.extend(customParseFormat)
 
 describe('Utility function tests', () => {
     test('Expects to return the router contract', async () => {
@@ -53,34 +65,6 @@ describe('Utility function tests', () => {
         expect(optionChainAddress).toBe('0x2967bb4fa8e6744E1c9C4131705795A29c00caBB')
     })
 
-    test('Expects to get single spot price', async () => {
-        const spotPrice = await arrowsdk.getUnderlierSpotPrice(arrowsdk.Ticker.BTC)
-
-        expect(typeof(spotPrice)).toBe('number')
-    })
-
-    test('Expects to get underlier market chart', async () => {
-        const marketChart = await arrowsdk.getUnderlierMarketChart(arrowsdk.Ticker.AVAX)
-
-        expect(typeof(marketChart.priceHistory[0].price)).toBe('number')
-        expect(typeof(marketChart.priceHistory[0].date)).toBe('number')
-        expect(typeof(marketChart.marketCaps[0][0])).toBe('number')
-        expect(typeof(marketChart.marketCaps[0][1])).toBe('number')
-    })
-
-    test('Expects to get spot price and historical prices', async () => {
-        const {
-            spotPrice,
-            marketChart
-        } = await arrowsdk.getUnderlierSpotPriceAndMarketChart(arrowsdk.Ticker.ETH)
-
-        expect(typeof(spotPrice)).toBe('number')
-        expect(typeof(marketChart.priceHistory[0].price)).toBe('number')
-        expect(typeof(marketChart.priceHistory[0].date)).toBe('number')
-        expect(typeof(marketChart.marketCaps[0][0])).toBe('number')
-        expect(typeof(marketChart.marketCaps[0][1])).toBe('number')
-    })
-
     test('Expects to get current UTC time', async () => {
         const currentTimeUTC = await arrowsdk.getCurrentTimeUTC()
 
@@ -94,7 +78,6 @@ describe('Utility function tests', () => {
         
         expect(typeof(readableTimestamp)).toBe('string')
         expect(readableTimestamp).toBe('10042022')
-  
     })
 
     test('Expects to get UTC time', async () => {
@@ -106,7 +89,6 @@ describe('Utility function tests', () => {
         expect(utcTime.readableTimestamp).toBe('10042022')
         expect(utcTime.unixTimestamp).toBe(1664879367)
         expect(utcTime.millisTimestamp).toBe(1664879367000)
-  
     })
 
     test('Expects to get expiration timestamp', async () => {
@@ -116,13 +98,12 @@ describe('Utility function tests', () => {
         expect(typeof(validExpiration.millisTimestamp)).toBe('number')
         expect(validExpiration.unixTimestamp).toBe(1665129600)
         expect(validExpiration.millisTimestamp).toBe(1665129600000)
-  
     })
 
     test('Expects UNSUPPORTED_EXPIRATION_ERROR when expiration is not a Friday', async () => {
         await expect(async () => { 
-            await arrowsdk.getExpirationTimestamp('10042022'); 
-        }).rejects.toThrowError(UNSUPPORTED_EXPIRATION_ERROR);
+            await arrowsdk.getExpirationTimestamp('10042022')
+        }).rejects.toThrowError(UNSUPPORTED_EXPIRATION_ERROR)
     })
 
     test('Expects to determine if timestamp is a Friday', async () => {
@@ -131,7 +112,6 @@ describe('Utility function tests', () => {
         
         expect(notFriday).toBe(false)
         expect(friday).toBe(true)
-
     })
 
     test('Expects to determine if version is valid', async () => {
@@ -140,34 +120,34 @@ describe('Utility function tests', () => {
         
         expect(invalid).toBe(false)
         expect(valid).toBe(true)
-
     })
 
     test('Excepts to prepare deliver option params', async () => {
          // Option order parameters
-         // Dummy testing account
-        const wallet = new ethers.Wallet('65acf45f04d6c793712caa5aba61a9e3d2f9194e1aae129f9ca6fe39a32d159f', arrowsdk.providers.fuji)
+        const wallet = new ethers.Wallet(
+            '65acf45f04d6c793712caa5aba61a9e3d2f9194e1aae129f9ca6fe39a32d159f', // Public facing test account
+            arrowsdk.providers.fuji
+        )
 
-        const nextNearestFriday = moment.utc().add(1, 'week').set('day', 5)
-
+        const nextNearestFriday = dayjs.utc().add(1, 'week').set('day', 5)
         const readableExpiration = nextNearestFriday.format('MMDDYYYY')
         
         const option: OptionContract = {
-            "ticker": Ticker.AVAX,
-            "expiration": readableExpiration, // The next nearest friday from today
-            "strike": [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
-            "contract_type": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+            ticker: Ticker.AVAX,
+            expiration: readableExpiration, // The next nearest friday from today
+            strike: [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
+            contractType: ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
         }
         
         // Get current price of underlying asset from Binance/CryptoWatch and 12 weeks of price history from CoinGecko.
-        option.spot_price = await arrowsdk.getUnderlierSpotPrice(option.ticker)
-        option.price_history = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
+        option.spotPrice = await arrowsdk.getUnderlierSpotPrice(option.ticker)
+        option.priceHistory = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
         
         // Estimate option price by making API request.
         const optionOrderParams: OptionOrderParams = {
-            "quantity": 2.0, // 2.0 contracts
+            quantity: 2.0, // 2.0 contracts
             ...option,
-            "order_type": OrderType.LONG_OPEN
+            orderType: OrderType.LONG_OPEN
         }
 
         optionOrderParams.thresholdPrice = 1.0
@@ -176,5 +156,4 @@ describe('Utility function tests', () => {
         
         expect(deliverOptionParams).toBeDefined()
     })
-
 })

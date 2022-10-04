@@ -6,7 +6,7 @@
 import axios from "axios"
 import { ethers } from "ethers"
 import dayjs from "dayjs"
-import utc from 'dayjs/plugin/utc'
+import utc from "dayjs/plugin/utc"
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 
 dayjs.extend(utc)
@@ -310,7 +310,7 @@ export function getTimeUTC(millisTimestamp: number) {
  * @returns JSON object that contains a moment object as well as unix and millisecond timestamp representations of the readable timestamp.
  */
 export function getExpirationTimestamp(readableExpiration: string): Record<string, any> {
-    const expiration = dayjs(readableExpiration, 'MMDDYYYY').hour(4)
+    const expiration = dayjs.utc(readableExpiration, 'MMDDYYYY').hour(8)
     
     if (!isFriday(expiration.unix())) throw UNSUPPORTED_EXPIRATION_ERROR
 
@@ -444,13 +444,13 @@ export async function prepareDeliverOptionParams(
             "uint256"     // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
         ],
         [
-            optionOrderParams.order_type === OrderType.LONG_OPEN,
+            optionOrderParams.orderType === OrderType.LONG_OPEN,
             optionOrderParams.ticker,
             unixExpiration,
             optionOrderParams.expiration,
             bigNumberStrike,
             formattedStrike,
-            optionOrderParams.contract_type,
+            optionOrderParams.contractType,
             intQuantity,
             thresholdPrice
         ]
@@ -478,4 +478,3 @@ export async function prepareDeliverOptionParams(
         bigNumberThresholdPrice: thresholdPrice
     }
 }
-
