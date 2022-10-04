@@ -77,6 +77,17 @@ export async function estimateOptionPrice(
         priceHistory = marketChart.priceHistory
     }
 
+    console.log({
+        order_type: optionOrderParams.orderType,
+        ticker: optionOrderParams.ticker,
+        expiration: optionOrderParams.expiration, // API only takes in readable expirations so it can manually set the UNIX expiration
+        strike: strike,
+        contract_type: optionOrderParams.contractType,
+        quantity: optionOrderParams.quantity,
+        spot_price: spotPrice,
+        price_history: priceHistory.map(entry => entry.price)
+    })
+    
     const estimatedOptionPriceResponse = await axios.post(
         urls.api[version] + "/estimate-option-price",
         {
@@ -86,16 +97,14 @@ export async function estimateOptionPrice(
             strike: strike,
             contract_type: optionOrderParams.contractType,
             quantity: optionOrderParams.quantity,
-            price_history: priceHistory.map(entry => entry.price),
-            spot_price: spotPrice
+            spot_price: spotPrice,
+            price_history: priceHistory.map(entry => entry.price)
         }
     )
 
-    const estimatedOptionPrice = parseFloat(
-        estimatedOptionPriceResponse.data.option_price.toFixed(6)
-    )
+    console.log(estimatedOptionPriceResponse)
 
-    return estimatedOptionPrice
+    return estimatedOptionPriceResponse.data.option_price
 }
 
 /**
