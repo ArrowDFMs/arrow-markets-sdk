@@ -1,139 +1,136 @@
 import { ethers } from "ethers"
 import moment from "moment"
+import { type } from "os"
 import arrowsdk from "../src/arrow-sdk"
 import { UNSUPPORTED_EXPIRATION_ERROR } from "../src/constants"
-import { ContractType, OptionContract, OptionOrderParams, OrderType, Ticker, Version } from "../src/types"
+import { ContractType, DeliverOptionParams, OptionContract, OptionOrderParams, OrderType, Ticker, Version } from "../src/types"
 import { isFriday } from "../src/utilities"
 
 describe('External API Request Tests', () => {
-    test('Computes option chain address', async () => {
-        const optionChainAddress = await arrowsdk.computeOptionChainAddress(arrowsdk.Ticker.BTC, '10072022')
-        
-        expect(typeof(optionChainAddress)).toBe('string')
-        expect(optionChainAddress).toBe('0x2967bb4fa8e6744E1c9C4131705795A29c00caBB')
-    })
+    const nextNearestFriday = moment.utc().add(1, 'week').set('day', 5)
+    const readableExpiration = nextNearestFriday.format('MMDDYYYY')
 
-    test('Expects to get single spot price', async () => {
-        const spotPrice = await arrowsdk.getUnderlierSpotPrice(arrowsdk.Ticker.BTC)
-
-        expect(typeof(spotPrice)).toBe('number')
-    })
-
-    test('Expects to get underlier market chart', async () => {
-        const marketChart = await arrowsdk.getUnderlierMarketChart(arrowsdk.Ticker.AVAX)
-
-        expect(typeof(marketChart.priceHistory[0].price)).toBe('number')
-        expect(typeof(marketChart.priceHistory[0].date)).toBe('number')
-        expect(typeof(marketChart.marketCaps[0][0])).toBe('number')
-        expect(typeof(marketChart.marketCaps[0][1])).toBe('number')
-    })
-
-    test('Expects to get spot price and historical prices', async () => {
-        const {
-            spotPrice,
-            marketChart
-        } = await arrowsdk.getUnderlierSpotPriceAndMarketChart(arrowsdk.Ticker.ETH)
-
-        expect(typeof(spotPrice)).toBe('number')
-        expect(typeof(marketChart.priceHistory[0].price)).toBe('number')
-        expect(typeof(marketChart.priceHistory[0].date)).toBe('number')
-        expect(typeof(marketChart.marketCaps[0][0])).toBe('number')
-        expect(typeof(marketChart.marketCaps[0][1])).toBe('number')
-    })
-
-    test('Expects to get current UTC time', async () => {
-        const currentTimeUTC = await arrowsdk.getCurrentTimeUTC()
-
-        expect(typeof(currentTimeUTC.millisTimestamp)).toBe('number')
-        expect(typeof(currentTimeUTC.readableTimestamp)).toBe('string')
-        expect(typeof(currentTimeUTC.unixTimestamp)).toBe('number')
-    })
-
-    test('Expects to get readable timestamp', async () => {
-        const readableTimestamp = await arrowsdk.getReadableTimestamp(1664879367000)
-        
-        expect(typeof(readableTimestamp)).toBe('string')
-        expect(readableTimestamp).toBe('10042022')
-  
-    })
-
-    test('Expects to get UTC time', async () => {
-        const utcTime = await arrowsdk.getTimeUTC(1664879367000)
-       
-        expect(typeof(utcTime.unixTimestamp)).toBe('number')
-        expect(typeof(utcTime.millisTimestamp)).toBe('number')
-        expect(typeof(utcTime.readableTimestamp)).toBe('string')
-        expect(utcTime.readableTimestamp).toBe('10042022')
-        expect(utcTime.unixTimestamp).toBe(1664879367)
-        expect(utcTime.millisTimestamp).toBe(1664879367000)
-  
-    })
-
-    test('Expects to get expiration timestamp', async () => {
-        const validExpiration = await arrowsdk.getExpirationTimestamp('10072022')
-        
-        expect(typeof(validExpiration.unixTimestamp)).toBe('number')
-        expect(typeof(validExpiration.millisTimestamp)).toBe('number')
-        expect(validExpiration.unixTimestamp).toBe(1665129600)
-        expect(validExpiration.millisTimestamp).toBe(1665129600000)
-  
-    })
-
-    test('Expects UNSUPPORTED_EXPIRATION_ERROR when expiration is not a Friday', async () => {
-        await expect(async () => { 
-            await arrowsdk.getExpirationTimestamp('10042022'); 
-        }).rejects.toThrowError(UNSUPPORTED_EXPIRATION_ERROR);
-    })
-
-    test('Expects to determine if timestamp is a Friday', async () => {
-        const notFriday = isFriday(1665052167)
-        const friday = isFriday(1665138567)
-        
-        expect(notFriday).toBe(false)
-        expect(friday).toBe(true)
-
-    })
-
-    test('Expects to determine if version is valid', async () => {
-        const valid = arrowsdk.isValidVersion(Version.V3)
-        const invalid = arrowsdk.isValidVersion('INVALID' as Version)
-        
-        expect(invalid).toBe(false)
-        expect(valid).toBe(true)
-
-    })
-
-    test('Excepts to prepare deliver option params', async () => {
-         // Option order parameters
-         // Dummy testing account
-        const wallet = new ethers.Wallet('65acf45f04d6c793712caa5aba61a9e3d2f9194e1aae129f9ca6fe39a32d159f', arrowsdk.providers.fuji)
-
+    test('Expects to estimate option price', async () => {
+        // Option order parameters
         const nextNearestFriday = moment.utc().add(1, 'week').set('day', 5)
 
         const readableExpiration = nextNearestFriday.format('MMDDYYYY')
-        
+        console.log('readableExpiration',readableExpiration)
         const option: OptionContract = {
             "ticker": Ticker.AVAX,
             "expiration": readableExpiration, // The next nearest friday from today
             "strike": [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
-            "contractType": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+            "contract_type": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
         }
         
         // Get current price of underlying asset from Binance/CryptoWatch and 12 weeks of price history from CoinGecko.
-        option.underlierSpotPrice = await arrowsdk.getUnderlierSpotPrice(option.ticker)
-        option.underlierPriceHistory = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
+        option.spot_price = await arrowsdk.getUnderlierSpotPrice(option.ticker)
+        option.price_history = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
+        // Estimate option price by making API request.
+        const optionOrderParams: OptionOrderParams = {
+            "quantity": 2.0, // 2.0 contracts
+            ...option,
+            "order_type": OrderType.LONG_OPEN
+        }
+
+        const estimatedOptionPrice = await arrowsdk.estimateOptionPrice(optionOrderParams, Version.V4)
+
+            
+            expect(typeof(estimatedOptionPrice)).toBe('number')
+            // expect(optionChainAddress).toBe('0x2967bb4fa8e6744E1c9C4131705795A29c00caBB')
+    })
+    
+    test('Expects to get recommended option', async () => {
+        const recommendedOption = await arrowsdk.getRecommendedOption(Ticker.AVAX, readableExpiration, 20)
+        
+        expect(recommendedOption).toBeDefined()
+    })
+
+    test('Expects to get strike grid', async () => {
+        const strikeGrid = await arrowsdk.getStrikeGrid(0,Ticker.AVAX, readableExpiration, 0)
+        
+        expect(strikeGrid).toBeDefined()
+    })
+
+    test('Expects to submit option order', async () => {
+        const wallet = new ethers.Wallet('65acf45f04d6c793712caa5aba61a9e3d2f9194e1aae129f9ca6fe39a32d159f', arrowsdk.providers.fuji)
+        const version = Version.V4
+
+        // Calculate a future expiration (as a UNIX timestamp).
+        // Expirations must always be a Friday.
+        const nextNearestFriday = moment.utc().add(1, 'week').set('day', 5)
+        const readableExpiration = nextNearestFriday.format('MMDDYYYY')
+
+        const stablecoin = await arrowsdk.getStablecoinContract(version, wallet)
+
+        // Option order parameters
+        const option: OptionContract = {
+            "ticker": Ticker.AVAX,
+            "expiration": readableExpiration, // The next nearest friday from today
+            "strike": [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
+            "contract_type": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+        }
+        
+        // Get current price of underlying asset from Binance/CryptoWatch and 12 weeks of price history from CoinGecko.
+        option.spot_price = await arrowsdk.getUnderlierSpotPrice(option.ticker)
+        option.price_history = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
         
         // Estimate option price by making API request.
         const optionOrderParams: OptionOrderParams = {
             "quantity": 2.0, // 2.0 contracts
             ...option,
-            "orderType": OrderType.LONG_OPEN
+            "order_type": OrderType.LONG_OPEN
+        }
+        const estimatedOptionPrice = await arrowsdk.estimateOptionPrice(optionOrderParams, version)
+
+        // Prepare the order parameters.
+        // Below, we set a threshold price for which any higher (for option buy) or lower (for option sell) price will be rejected in the option order.
+        // For this example, we choose to set our thresholdPrice to be equal to the estimatedOptionPrice.
+        optionOrderParams.thresholdPrice = estimatedOptionPrice
+
+        // Prepare the option order parameters
+        const deliverOptionParams: DeliverOptionParams = await arrowsdk.prepareDeliverOptionParams(optionOrderParams, version, wallet)
+        
+        // Get computed option chain address
+        const optionChainAddress = await arrowsdk.computeOptionChainAddress(option.ticker, option.expiration, version)
+
+        // Approval circuit if the order is a "buy" order
+        if (deliverOptionParams.order_type === OrderType.LONG_OPEN) {
+            // Get user's balance of stablecoin
+            const userBalance = await stablecoin.balanceOf(wallet.address)
+
+            // If user's balance is less than the amount required for the approval, throw an error
+            if (userBalance.lt(deliverOptionParams.amountToApprove)) {
+                throw new Error('You do not have enough stablecoin to pay for your indicated threshold price.')
+            }
+
+            // Get the amount that the option chain proxy is currently approved to spend
+            let approvedAmount = await stablecoin.allowance(wallet.address, optionChainAddress)
+            // If the approved amount is less than the amount required to be approved, ask user to approve the proper amount
+            if (approvedAmount.lt(deliverOptionParams.amountToApprove)) {
+                // Wait for the approval to be confirmed on-chain
+                await (await stablecoin.approve(optionChainAddress, deliverOptionParams.amountToApprove)).wait(3)
+
+                // Get the amount that the option chain proxy is approved to spend now
+                approvedAmount = await stablecoin.allowance(wallet.address, optionChainAddress)
+                // If the newly approved amount is still less than the amount required to be approved, throw and error
+                if (approvedAmount.lt(deliverOptionParams.amountToApprove)) {
+                    throw new Error('Approval to option chain failed.')
+                }
+            }
         }
 
-        optionOrderParams.thresholdPrice = 1.0
+        // Submit order to API and get response
+        const { tx_hash, execution_price } = await arrowsdk.submitOptionOrder(deliverOptionParams, version)
 
-        const deliverOptionParams = await arrowsdk.prepareDeliverOptionParams(optionOrderParams,Version.V4,wallet)
+        console.log("Transaction hash:", tx_hash) // Transaction has of option order on Arrow
+        console.log("Execution price:", execution_price) // The price the user ended up paying for each option in their order
         
-        expect(deliverOptionParams).toBeDefined()
+        expect(tx_hash).toBeDefined()
+        expect(typeof(tx_hash)).toBe('string')
+        expect(execution_price).toBeDefined()
+        expect(typeof(execution_price)).toBe('string')
+
     })
+
 })
