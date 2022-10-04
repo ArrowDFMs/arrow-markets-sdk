@@ -3,6 +3,13 @@ import { UNSUPPORTED_EXPIRATION_ERROR } from "../src/constants"
 import { getExpirationTimestamp, isFriday } from "../src/utilities"
 
 describe('External API Request Tests', () => {
+    test('Computes option chain address', async () => {
+        const optionChainAddress = await arrowsdk.computeOptionChainAddress(arrowsdk.Ticker.BTC, '10072022')
+        
+        expect(typeof(optionChainAddress)).toBe('string')
+        expect(typeof(optionChainAddress)).toBe('0xa2E6801f836167C57C8562B7870ad276Fa1e7ec5')
+    })
+
     test('Expects to get single spot price', async () => {
         const spotPrice = await arrowsdk.getUnderlierSpotPrice(arrowsdk.Ticker.BTC)
 
