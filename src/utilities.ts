@@ -5,7 +5,12 @@
 // Packages
 import axios from "axios"
 import { ethers } from "ethers"
-import moment from "moment"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+
+dayjs.extend(utc)
+dayjs.extend(customParseFormat)
 
 // Types
 import {
@@ -24,6 +29,7 @@ import {
     binanceSymbols,
     bytecodeHashes,
     coingeckoIDs,
+    DEFAULT_VERSION,
     providers,
     quantityScaleFactor,
     secondsPerDay,
@@ -46,12 +52,12 @@ import {
 /**
  * Get the router contract from Arrow's contract suite.
  *
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the router contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow router contract.
  */
 export function getRouterContract(
-    version = Version.V3,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -70,12 +76,12 @@ export function getRouterContract(
 /**
  * Get the stablecoin contract that is associated with Arrow's contract suite.
  *
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the stablecoin contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the stablecoin contract.
  */
 export async function getStablecoinContract(
-    version = Version.V3,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -94,12 +100,12 @@ export async function getStablecoinContract(
 /**
  * Get the events contract from Arrow's contract suite.
  *
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the Arrow events contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow events contract.
  */
 export async function getEventsContract(
-    version = Version.V3,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -118,12 +124,12 @@ export async function getEventsContract(
 /**
  * Get the registry contract from Arrow's registry suite.
  *
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow registry contract.
  */
 export async function getRegistryContract(
-    version = Version.V3,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -260,8 +266,8 @@ export function isValidVersion(version: Version): boolean {
  * @param millisTimestamp Millisecond timestamp in UTC. For example, 1654848000000 for Jun 10 2022 08:00:00.
  * @returns Readable timestamp in the "MMDDYYYY" format.
  */
-export function getReadableTimestamp(millisTimestamp: number) {
-    return moment.utc(millisTimestamp).format("MMDDYYYY")
+export function getReadableTimestamp(millisTimestamp: number, includeSlashes = false) {
+    return dayjs(millisTimestamp).utc().format(includeSlashes ? 'MM/DD/YYYY' : "MMDDYYYY")
 }
 
 /**
@@ -270,14 +276,13 @@ export function getReadableTimestamp(millisTimestamp: number) {
  * @returns Object that contains a moment object & unix, millisecond, and readable timestamp representations of the current time.
  */
 export function getCurrentTimeUTC() {
-    const currentTime = moment.utc()
-    const utcMillisecondTimestamp = currentTime.valueOf()
+    const currentTime = dayjs().utc()
 
     return {
-        momentTimestamp: currentTime,
+        dayJsTimestamp: currentTime,
         unixTimestamp: currentTime.unix(),
-        millisTimestamp: utcMillisecondTimestamp,
-        readableTimestamp: getReadableTimestamp(utcMillisecondTimestamp)
+        millisTimestamp: currentTime.valueOf(),
+        readableTimestamp: getReadableTimestamp(currentTime.valueOf())
     }
 }
 
@@ -288,11 +293,11 @@ export function getCurrentTimeUTC() {
  * @returns JSON object that contains a moment object as well as unix, millisecond, and readable UTC timestamp representations of millisTimestamp.
  */
 export function getTimeUTC(millisTimestamp: number) {
-    const time = moment.utc(millisTimestamp)
+    const time = dayjs(millisTimestamp) 
     const utcMillisecondTimestamp = time.valueOf()
 
     return {
-        momentTimestamp: time,
+        dayJsTimestamp: time,
         unixTimestamp: time.unix(),
         millisTimestamp: utcMillisecondTimestamp,
         readableTimestamp: getReadableTimestamp(utcMillisecondTimestamp)
@@ -306,11 +311,12 @@ export function getTimeUTC(millisTimestamp: number) {
  * @returns JSON object that contains a moment object as well as unix and millisecond timestamp representations of the readable timestamp.
  */
 export function getExpirationTimestamp(readableExpiration: string): Record<string, any> {
-    const expiration = moment.utc(readableExpiration, "MMDDYYYY").set("hour", 8)
+    const expiration = dayjs.utc(readableExpiration, 'MMDDYYYY').hour(8)
+    
     if (!isFriday(expiration.unix())) throw UNSUPPORTED_EXPIRATION_ERROR
 
     return {
-        momentTimestamp: expiration,
+        dayJsTimestamp: expiration,
         unixTimestamp: expiration.unix(),
         millisTimestamp: expiration.valueOf()
     }
@@ -333,14 +339,14 @@ export function isFriday(unixTimestamp: number): boolean {
  *
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
  * @returns Address of the option chain corresponding to the passed ticker and expiration.
  */
 export async function computeOptionChainAddress(
     ticker: Ticker,
     readableExpiration: string,
-    version = Version.V3,
+    version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
         | ethers.Wallet
@@ -351,6 +357,7 @@ export async function computeOptionChainAddress(
 
     let optionChainFactoryAddress = undefined
     switch (version) {
+        case Version.V4:
         case Version.V3:
         case Version.COMPETITION:
             optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
@@ -379,13 +386,13 @@ export async function computeOptionChainAddress(
  * Help construct DeliverOptionParams object that can be passed to the Arrow API to submit an option order.
  *
  * @param optionOrderParams Object containing parameters necesssary in computing parameters for submitting an option order.
- * @param version Version of Arrow contract suite with which to interact. Default is V3.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @param wallet Wallet with which you want to submit the option order.
  * @returns JSON that contains the variables necessary in completing the option order.
  */
 export async function prepareDeliverOptionParams(
     optionOrderParams: OptionOrderParams,
-    version = Version.V3,
+    version = DEFAULT_VERSION,
     wallet: ethers.Wallet | ethers.Signer
 ): Promise<DeliverOptionParams> {
     // Get stablecoin decimals
@@ -395,7 +402,7 @@ export async function prepareDeliverOptionParams(
 
     // Define scope for variables
     const thresholdPrice = ethers.utils.parseUnits(
-        optionOrderParams.thresholdPrice!.toString(),
+        optionOrderParams.thresholdPrice!.toFixed(stablecoinDecimals),
         stablecoinDecimals
     )
     const unixExpiration = getExpirationTimestamp(
@@ -415,6 +422,7 @@ export async function prepareDeliverOptionParams(
             intQuantity = optionOrderParams.quantity!
 
             break
+        case Version.V4:
         case Version.COMPETITION:
             intQuantity = optionOrderParams.quantity! * quantityScaleFactor            
 
@@ -457,7 +465,7 @@ export async function prepareDeliverOptionParams(
     const value = optionOrderParams.thresholdPrice! * optionOrderParams.quantity!
 
     const amountToApprove = ethers.BigNumber.from(
-        ethers.utils.parseUnits(value.toString(), stablecoinDecimals)
+        ethers.utils.parseUnits(value.toFixed(stablecoinDecimals), stablecoinDecimals)
     )
 
     return {
@@ -471,4 +479,3 @@ export async function prepareDeliverOptionParams(
         bigNumberThresholdPrice: thresholdPrice
     }
 }
-

@@ -14,7 +14,12 @@ import {
 } from "../lib/src/types"
 import arrowsdk from "../lib/src/arrow-sdk"
 import { ethers } from "ethers"
-import moment from "moment"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+
+dayjs.extend(utc)
+dayjs.extend(customParseFormat)
 
 // Get wallet using private key from .env file
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, arrowsdk.providers.fuji)
@@ -32,26 +37,26 @@ async function main() {
 
     // Calculate a future expiration (as a UNIX timestamp).
     // Expirations must always be a Friday.
-    const nextNearestFriday = moment.utc().add(1, 'week').set('day', 5)
+    const nextNearestFriday = dayjs.utc().add(1, 'week').set('day', 5)
     const readableExpiration = nextNearestFriday.format('MMDDYYYY')
 
     // Option order parameters
     const option: OptionContract = {
-        "ticker": Ticker.AVAX,
-        "expiration": readableExpiration, // The next nearest friday from today
-        "strike": [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
-        "contractType": ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
+        ticker: Ticker.AVAX,
+        expiration: readableExpiration, // The next nearest friday from today
+        strike: [87.02, 84.0], // Note that the ordering of the strikes is always [long, short] for spreads and always [long, 0] for single calls/puts
+        contractType: ContractType.PUT_SPREAD, // 0 for call, 1 for put, 2 for call spread, and 3 for put spread
     }
     
     // Get current price of underlying asset from Binance/CryptoWatch and 12 weeks of price history from CoinGecko.
-    option.underlierSpotPrice = await arrowsdk.getUnderlierSpotPrice(option.ticker)
-    option.underlierPriceHistory = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
+    option.spotPrice = await arrowsdk.getUnderlierSpotPrice(option.ticker)
+    option.priceHistory = (await arrowsdk.getUnderlierMarketChart(option.ticker)).priceHistory
     
     // Estimate option price by making API request.
     const optionOrderParams: OptionOrderParams = {
-        "quantity": 2.0, // 2.0 contracts
+        quantity: 2.0, // 2.0 contracts
         ...option,
-        "orderType": OrderType.LONG_OPEN
+        orderType: OrderType.LONG_OPEN
     }
     const estimatedOptionPrice = await arrowsdk.estimateOptionPrice(optionOrderParams, version)
 

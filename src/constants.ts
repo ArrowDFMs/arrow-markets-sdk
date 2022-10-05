@@ -36,10 +36,13 @@ export const UNSUPPORTED_EXPIRATION_ERROR = new Error(
     "Please select a Friday expiration date."
 )
 
+export const DEFAULT_VERSION = Version.V4
+
 export const urls: any = {
     api: {
-        [Version.V3]: "https://fuji-v3-api.arrow.markets/v1/",
-        [Version.COMPETITION]: "https://competition-v2-api.arrow.markets/v1"
+        [Version.V3]: "https://fuji-v3-api.arrow.markets/v1",
+        [Version.V4]: "https://fuji-v4-api.arrow.markets/v1",
+        [Version.COMPETITION]: "https://competition-v3-api.arrow.markets/v1"
     },
     provider: {
         fuji: "https://api.avax-test.network/ext/bc/C/rpc"
@@ -56,6 +59,9 @@ export const addresses: any = {
             [Version.V3]: ethers.utils.getAddress(
                 "0x31122CeF9891Ef661C99352266FA0FF0079a0e06"
             ),
+            [Version.V4]: ethers.utils.getAddress(
+                "0x0f147e53bE44999361fc67e300283626a27002d2"
+            ),
             [Version.COMPETITION]: ethers.utils.getAddress(
                 "0xD0890Cc0B2F5Cd6DB202378C35F39Db3EB0A4b0C"
             )
@@ -68,6 +74,10 @@ export const bytecodeHashes: any = {
         [Version.V3]: ethers.utils.solidityKeccak256(
             ["bytes"],
             [ArrowOptionChainProxy.v3.bytecode]
+        ),
+        [Version.V4]: ethers.utils.solidityKeccak256(
+            ["bytes"],
+            [ArrowOptionChainProxy.v4.bytecode]
         ),
         [Version.COMPETITION]: ethers.utils.solidityKeccak256(
             ["bytes"],

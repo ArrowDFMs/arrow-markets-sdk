@@ -11,12 +11,12 @@ describe('External API Request Tests', () => {
         const marketChart = await arrowsdk.getUnderlierMarketChart(arrowsdk.Ticker.AVAX)
 
         expect(typeof(marketChart.priceHistory[0].price)).toBe('number')
-        expect(typeof(marketChart.priceHistory[0].date)).toBe('string')
+        expect(typeof(marketChart.priceHistory[0].date)).toBe('number')
         expect(typeof(marketChart.marketCaps[0][0])).toBe('number')
         expect(typeof(marketChart.marketCaps[0][1])).toBe('number')
     })
 
-    test('Excepts to get spot price and historical prices', async () => {
+    test('Expects to get spot price and historical prices', async () => {
         const {
             spotPrice,
             marketChart
@@ -24,7 +24,7 @@ describe('External API Request Tests', () => {
 
         expect(typeof(spotPrice)).toBe('number')
         expect(typeof(marketChart.priceHistory[0].price)).toBe('number')
-        expect(typeof(marketChart.priceHistory[0].date)).toBe('string')
+        expect(typeof(marketChart.priceHistory[0].date)).toBe('number')
         expect(typeof(marketChart.marketCaps[0][0])).toBe('number')
         expect(typeof(marketChart.marketCaps[0][1])).toBe('number')
     })

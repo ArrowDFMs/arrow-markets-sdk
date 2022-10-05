@@ -10,6 +10,7 @@ import { ethers } from "ethers"
 
 export enum Version {
     V3 = "v3",
+    V4 = "v4",
     COMPETITION = "competition"
 }
 
@@ -60,9 +61,9 @@ export interface OptionContract {
     strike: number[]; // Accepts arrays with two values for spreads. Formatted as [longStrike, shortStrike].
     contractType: ContractType; // ContractType enum that indicates whether the option is a call, put, call spread, or put spread.
     price?: number; // Float number that indicates the price of 1 option.
-    underlierSpotPrice?: number; // Most up-to-date price of underlying asset.
-    underlierPriceHistory?: {
-        date: any;
+    spotPrice?: number; // Most up-to-date price of underlying asset.
+    priceHistory?: {
+        date: number;
         price: number;
     }[]; // Prices of underlying asset over some period of history.
     greeks?: Greeks; // Greeks interface that specifies which greeks are tied to this option.
