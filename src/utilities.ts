@@ -266,8 +266,8 @@ export function isValidVersion(version: Version): boolean {
  * @param millisTimestamp Millisecond timestamp in UTC. For example, 1654848000000 for Jun 10 2022 08:00:00.
  * @returns Readable timestamp in the "MMDDYYYY" format.
  */
-export function getReadableTimestamp(millisTimestamp: number) {
-    return dayjs(millisTimestamp).utc().format('MMDDYYYY')
+export function getReadableTimestamp(millisTimestamp: number, includeSlashes = false) {
+    return dayjs(millisTimestamp).utc().format(includeSlashes ? 'MM/DD/YYYY' : "MMDDYYYY")
 }
 
 /**
