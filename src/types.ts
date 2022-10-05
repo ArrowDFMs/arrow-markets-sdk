@@ -59,7 +59,7 @@ export interface OptionContract {
     ticker: Ticker; // Ticker enum that denotes a particular asset.
     expiration: string; // Readable expiration date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
     strike: number[]; // Accepts arrays with two values for spreads. Formatted as [longStrike, shortStrike].
-    contractType: ContractType; // contract_type enum that indicates whether the option is a call, put, call spread, or put spread.
+    contractType: ContractType; // ContractType enum that indicates whether the option is a call, put, call spread, or put spread.
     price?: number; // Float number that indicates the price of 1 option.
     spotPrice?: number; // Most up-to-date price of underlying asset.
     priceHistory?: {
@@ -71,7 +71,7 @@ export interface OptionContract {
 
 export interface OptionOrderParams extends OptionContract {
     quantity?: number; // Float number of contracts desired in the order.
-    orderType: OrderType // order_type enum that indicates whether this option is a long open, long close, short open, or short close.
+    orderType: OrderType // OrderType enum that indicates whether this option is a long open, long close, short open, or short close.
     thresholdPrice?: number; // The minimum (or maximum) price the user is willing to receive (or pay) for this specific option.
 }
 
