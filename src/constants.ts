@@ -42,7 +42,7 @@ export const urls: any = {
     api: {
         [Version.V3]: "https://fuji-v3-api.arrow.markets/v1",
         [Version.V4]: "https://fuji-v4-api.arrow.markets/v1",
-        [Version.COMPETITION]: "https://competition-v2-api.arrow.markets/v1"
+        [Version.COMPETITION]: "https://competition-v3-api.arrow.markets/v1"
     },
     provider: {
         fuji: "https://api.avax-test.network/ext/bc/C/rpc"
