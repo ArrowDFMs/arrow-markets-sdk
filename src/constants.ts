@@ -60,7 +60,7 @@ export const addresses: any = {
                 "0x31122CeF9891Ef661C99352266FA0FF0079a0e06"
             ),
             [Version.V4]: ethers.utils.getAddress(
-                "0x0004C98F75A4e6824EC1B4eB285ff18D0b7257C4"
+                "0x0f147e53bE44999361fc67e300283626a27002d2"
             ),
             [Version.COMPETITION]: ethers.utils.getAddress(
                 "0xD0890Cc0B2F5Cd6DB202378C35F39Db3EB0A4b0C"
