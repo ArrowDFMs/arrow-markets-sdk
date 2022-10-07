@@ -60,10 +60,10 @@ export const addresses: any = {
                 "0x31122CeF9891Ef661C99352266FA0FF0079a0e06"
             ),
             [Version.V4]: ethers.utils.getAddress(
-                "0x0f147e53bE44999361fc67e300283626a27002d2"
+                "0xa6EA0E47501627a964e11E31D2BD7D40452dff6F"
             ),
             [Version.COMPETITION]: ethers.utils.getAddress(
-                "0xD0890Cc0B2F5Cd6DB202378C35F39Db3EB0A4b0C"
+                "0x33D1a0529D0C23f183fF1de346BDcA029dB0046E"
             )
         }
     }
