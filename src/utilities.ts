@@ -4,7 +4,7 @@
 
 // Packages
 import axios from "axios"
-import { ethers } from "ethers"
+import { BigNumber, ethers } from "ethers"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import customParseFormat from "dayjs/plugin/customParseFormat"
@@ -383,6 +383,54 @@ export async function computeOptionChainAddress(
 }
 
 /**
+ * Compute address of on-chain short aggregator contract using CREATE2 functionality.
+ *
+ * @param ticker Ticker of the underlying asset.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
+ * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
+ * @returns Address of the short aggregator corresponding to the passed ticker.
+ */
+export async function computeShortAggregatorAddress(
+    ticker: Ticker,
+    version = DEFAULT_VERSION,
+    wallet:
+        | ethers.providers.Provider
+        | ethers.Wallet
+        | ethers.Signer = providers.fuji
+): Promise<string> {
+    // Get chain factory contract address from router
+    const router = getRouterContract(version, wallet)
+    
+    let shortAggregatorFactoryAddress = undefined
+    switch (version) {
+        case Version.V4:
+        case Version.V3:
+        case Version.COMPETITION:
+            shortAggregatorFactoryAddress = await router.getShortAggregatorFactoryAddress()
+            break
+        default:
+            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
+    }
+    console.log('router', router.address)
+    console.log('shortAggregatorFactoryAddress', shortAggregatorFactoryAddress)
+
+    // Build salt for CREATE2
+    const salt = ethers.utils.solidityKeccak256(
+        ["address", "string"],
+        [shortAggregatorFactoryAddress, ticker]
+    )
+
+    // Compute option chain proxy address using CREATE2
+    const optionChainAddress = ethers.utils.getCreate2Address(
+        shortAggregatorFactoryAddress,
+        salt,
+        bytecodeHashes.ArrowOptionChainProxy[version]
+    )
+
+    return optionChainAddress
+}
+
+/**
  * Help construct DeliverOptionParams object that can be passed to the Arrow API to submit an option order.
  *
  * @param optionOrderParams Object containing parameters necesssary in computing parameters for submitting an option order.
@@ -463,10 +511,32 @@ export async function prepareDeliverOptionParams(
     )
 
     const value = optionOrderParams.thresholdPrice! * optionOrderParams.quantity!
+    
+    let amountToApprove: BigNumber;
 
-    const amountToApprove = ethers.BigNumber.from(
+    if(optionOrderParams.orderType === OrderType.SHORT_OPEN) {
+        let diffPrice: number = 0;
+        if (optionOrderParams.contractType == 1){
+            // put
+            diffPrice = Number(optionOrderParams.strike[0])
+        }
+        else if (optionOrderParams.contractType == 2){
+            // call spread
+            diffPrice = Math.abs(Number(optionOrderParams.strike[1]) - Number(optionOrderParams.strike[0]))
+        }
+        else if (optionOrderParams.contractType == 3){
+            // put spread
+            diffPrice = Math.abs(Number(optionOrderParams.strike[0]) - Number(optionOrderParams.strike[1]))
+        }
+        console.log('Quanitity is',optionOrderParams.quantity)
+        console.log('diffPrice', diffPrice)
+        amountToApprove = ethers.utils.parseUnits((optionOrderParams.quantity! * diffPrice).toString(), stablecoinDecimals)
+    } else {
+        amountToApprove = ethers.BigNumber.from(
         ethers.utils.parseUnits(value.toFixed(stablecoinDecimals), stablecoinDecimals)
     )
+    }
+   
 
     return {
         hashedValues,

@@ -32,6 +32,7 @@ import {
 // Helpers
 import {
     computeOptionChainAddress,
+    computeShortAggregatorAddress,
     getCurrentTimeUTC,
     getEventsContract,
     getExpirationTimestamp,
@@ -269,24 +270,42 @@ export async function submitOptionOrder(
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
-
-    // Submit option order through API
-    const orderSubmissionResponse = await axios.post(
-        urls.api[version] + "/submit-order",
-        {
-            order_type: deliverOptionParams.orderType,
-            ticker: deliverOptionParams.ticker,
-            expiration: deliverOptionParams.expiration,
-            strike: deliverOptionParams.formattedStrike,
-            contract_type: deliverOptionParams.contractType,
-            quantity: deliverOptionParams.quantity,
-            threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
-            hashed_params: deliverOptionParams.hashedValues,
-            signature: deliverOptionParams.signature
-        }
-    )
-    // Return all data from response
-    return orderSubmissionResponse.data
+    if(deliverOptionParams.orderType === 2 || deliverOptionParams.orderType === 3) {
+        const toAdd = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
+        const orderSubmissionResponse = await axios.post(
+        urls.api[version] + toAdd,
+            {
+                order_type: deliverOptionParams.orderType,
+                ticker: deliverOptionParams.ticker,
+                expiration: deliverOptionParams.expiration,
+                strike: deliverOptionParams.formattedStrike,
+                contract_type: deliverOptionParams.contractType,
+                quantity: deliverOptionParams.quantity,
+                threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+                hashed_params: deliverOptionParams.hashedValues,
+                signature: deliverOptionParams.signature
+            }
+        )
+        return orderSubmissionResponse.data
+    } else {
+        // Submit option order through API
+        const orderSubmissionResponse = await axios.post(
+            urls.api[version] + "/submit-order",
+            {
+                order_type: deliverOptionParams.orderType,
+                ticker: deliverOptionParams.ticker,
+                expiration: deliverOptionParams.expiration,
+                strike: deliverOptionParams.formattedStrike,
+                contract_type: deliverOptionParams.contractType,
+                quantity: deliverOptionParams.quantity,
+                threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+                hashed_params: deliverOptionParams.hashedValues,
+                signature: deliverOptionParams.signature
+            }
+        )
+        // Return all data from response
+        return orderSubmissionResponse.data
+    }
 }
 
 /***************************************
@@ -372,6 +391,7 @@ const arrowsdk = {
 
     // Blockchain functions
     computeOptionChainAddress,
+    computeShortAggregatorAddress,
     getEventsContract,
     getRegistryContract,
     getRouterContract,

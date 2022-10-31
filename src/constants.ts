@@ -41,11 +41,11 @@ export const DEFAULT_VERSION = Version.V4
 export const urls: any = {
     api: {
         [Version.V3]: "https://fuji-v3-api.arrow.markets/v1",
-        [Version.V4]: "https://fuji-v4-api.arrow.markets/v1",
-        [Version.COMPETITION]: "https://competition-v3-api.arrow.markets/v1"
+        [Version.V4]: "http://localhost/v1",
+        [Version.COMPETITION]: "http://localhost/v1"
     },
     provider: {
-        fuji: "https://api.avax-test.network/ext/bc/C/rpc"
+        fuji: "https://devnet.arrow.markets/v1"
     }
 }
 
@@ -63,7 +63,7 @@ export const addresses: any = {
                 "0xa6EA0E47501627a964e11E31D2BD7D40452dff6F"
             ),
             [Version.COMPETITION]: ethers.utils.getAddress(
-                "0x33D1a0529D0C23f183fF1de346BDcA029dB0046E"
+                "0x3a31D91045b06c8E52f37dd615842ECC890954c3"
             )
         }
     }
