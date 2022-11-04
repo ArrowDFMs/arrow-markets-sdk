@@ -1,4 +1,5 @@
 import IERC20Metadata from "./IERC20Metadata.json"
+import WAsset from "./WAsset.json"
 
 import IArrowEventsV3 from "./v3/IArrowEvents.json"
 import IArrowRegistryV3 from "./v3/IArrowRegistry.json"
@@ -28,4 +29,4 @@ const IArrowRouter: any = {
     competition: IArrowRouterCompetition,
 }
 
-export { IERC20Metadata, IArrowEvents, IArrowRegistry, IArrowRouter }
+export { IERC20Metadata, WAsset, IArrowEvents, IArrowRegistry, IArrowRouter }

@@ -42,7 +42,8 @@ import {
     IArrowEvents,
     IArrowRegistry,
     IArrowRouter,
-    IERC20Metadata
+    IERC20Metadata,
+    WAsset
 } from "../abis"
 
 /***************************************
@@ -95,6 +96,32 @@ export async function getStablecoinContract(
         wallet
     )
     return stablecoin
+}
+
+/**
+ * Get the wrapped underlier contract that is associated with Arrow's contract suite.
+ *
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
+ * @param wallet Wallet with which you want to connect the instance of the stablecoin contract. Default is Fuji provider.
+ * @returns Local instance of ethers.Contract for the wrapped underlier contract.
+ */
+export async function getUnderlierAssetContract(
+    ticker: Ticker,
+    version = DEFAULT_VERSION,
+    wallet:
+        | ethers.providers.Provider
+        | ethers.Wallet
+        | ethers.Signer = providers.fuji
+) {
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+    const registry = await getRegistryContract(version, wallet)
+
+    const underlierAssetContract = new ethers.Contract(
+        registry.getUnderlyingAssetAddress(ticker),
+        WAsset,
+        wallet
+    )
+    return underlierAssetContract
 }
 
 /**
@@ -411,9 +438,6 @@ export async function computeShortAggregatorAddress(
         default:
             throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
     }
-    console.log('router', router.address)
-    console.log('shortAggregatorFactoryAddress', shortAggregatorFactoryAddress)
-
     // Build salt for CREATE2
     const salt = ethers.utils.solidityKeccak256(
         ["address", "string"],
@@ -443,6 +467,11 @@ export async function prepareDeliverOptionParams(
     version = DEFAULT_VERSION,
     wallet: ethers.Wallet | ethers.Signer
 ): Promise<DeliverOptionParams> {
+
+    if(optionOrderParams.orderType === OrderType.SHORT_CLOSE && optionOrderParams.payPremium === undefined) throw new Error(
+        'You must define `Pay Premium` parameter when closing a short position'
+    )
+
     // Get stablecoin decimals
     const stablecoinDecimals = await (
         await getStablecoinContract(version, wallet)
@@ -493,7 +522,7 @@ export async function prepareDeliverOptionParams(
             "uint256"     // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
         ],
         [
-            optionOrderParams.orderType === OrderType.LONG_OPEN,
+            optionOrderParams.orderType === OrderType.LONG_OPEN ||  optionOrderParams.orderType == OrderType.SHORT_OPEN,
             optionOrderParams.ticker,
             unixExpiration,
             optionOrderParams.expiration,
@@ -516,7 +545,7 @@ export async function prepareDeliverOptionParams(
 
     if(optionOrderParams.orderType === OrderType.SHORT_OPEN) {
         let diffPrice: number = 0;
-        if (optionOrderParams.contractType == 1){
+        if (optionOrderParams.contractType == 1 || optionOrderParams.contractType == 0){
             // put
             diffPrice = Number(optionOrderParams.strike[0])
         }

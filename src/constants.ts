@@ -7,7 +7,7 @@ import { ethers } from "ethers"
 import { Ticker, Version } from "./types"
 
 // Builds
-import { ArrowOptionChainProxy } from "../build"
+import { ArrowOptionChainProxy, AbstractArrowShortAggregator } from "../build"
 
 /*******************************
  *          CONSTANTS          *
@@ -45,7 +45,7 @@ export const urls: any = {
         [Version.COMPETITION]: "http://localhost/v1"
     },
     provider: {
-        fuji: "https://devnet.arrow.markets/v1"
+        fuji: "https://api.avax-test.network/ext/bc/C/rpc"
     }
 }
 
@@ -59,11 +59,11 @@ export const addresses: any = {
             [Version.V3]: ethers.utils.getAddress(
                 "0x31122CeF9891Ef661C99352266FA0FF0079a0e06"
             ),
-            [Version.V4]: ethers.utils.getAddress(
-                "0xa6EA0E47501627a964e11E31D2BD7D40452dff6F"
+             [Version.V4]: ethers.utils.getAddress(
+                "0xdf85cc2E90b29a42D078B6F24c1AC3B54051E868"
             ),
             [Version.COMPETITION]: ethers.utils.getAddress(
-                "0x3a31D91045b06c8E52f37dd615842ECC890954c3"
+                "0x33D1a0529D0C23f183fF1de346BDcA029dB0046E"
             )
         }
     }

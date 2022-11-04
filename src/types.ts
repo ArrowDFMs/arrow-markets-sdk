@@ -70,6 +70,7 @@ export interface OptionContract {
 }
 
 export interface OptionOrderParams extends OptionContract {
+    payPremium?: boolean | null,
     quantity?: number; // Float number of contracts desired in the order.
     orderType: OrderType // OrderType enum that indicates whether this option is a long open, long close, short open, or short close.
     thresholdPrice?: number; // The minimum (or maximum) price the user is willing to receive (or pay) for this specific option.

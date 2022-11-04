@@ -39,6 +39,7 @@ import {
     getReadableTimestamp,
     getRegistryContract,
     getRouterContract,
+    getUnderlierAssetContract,
     getStablecoinContract,
     getTimeUTC,
     getUnderlierMarketChart,
@@ -47,6 +48,7 @@ import {
     isValidVersion,
     prepareDeliverOptionParams
 } from "./utilities"
+import { off } from "process"
 
 /***************************************
  *           ARROW API CALLS           *
@@ -270,11 +272,15 @@ export async function submitOptionOrder(
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+    //TO DO UPDATE THIS
+    if(deliverOptionParams.orderType === 3 && deliverOptionParams.payPremium === null) throw new Error('Must provide all of the order parameters')
+
     if(deliverOptionParams.orderType === 2 || deliverOptionParams.orderType === 3) {
         const toAdd = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
         const orderSubmissionResponse = await axios.post(
         urls.api[version] + toAdd,
-            {
+            {   
+                pay_premium: deliverOptionParams.payPremium,
                 order_type: deliverOptionParams.orderType,
                 ticker: deliverOptionParams.ticker,
                 expiration: deliverOptionParams.expiration,
@@ -395,6 +401,7 @@ const arrowsdk = {
     getEventsContract,
     getRegistryContract,
     getRouterContract,
+    getUnderlierAssetContract,
     getStablecoinContract,
     prepareDeliverOptionParams,
     settleOptions
