@@ -557,8 +557,6 @@ export async function prepareDeliverOptionParams(
             // put spread
             diffPrice = Math.abs(Number(optionOrderParams.strike[0]) - Number(optionOrderParams.strike[1]))
         }
-        console.log('Quanitity is',optionOrderParams.quantity)
-        console.log('diffPrice', diffPrice)
         amountToApprove = ethers.utils.parseUnits((optionOrderParams.quantity! * diffPrice).toString(), stablecoinDecimals)
     } else {
         amountToApprove = ethers.BigNumber.from(
