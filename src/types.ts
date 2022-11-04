@@ -70,7 +70,7 @@ export interface OptionContract {
 }
 
 export interface OptionOrderParams extends OptionContract {
-    payPremium?: boolean | null,
+    payPremium?: boolean | null, // Set to `True` if the user will pay the premium using stablecoin. Set to `False` to pay the premium using their collateral
     quantity?: number; // Float number of contracts desired in the order.
     orderType: OrderType // OrderType enum that indicates whether this option is a long open, long close, short open, or short close.
     thresholdPrice?: number; // The minimum (or maximum) price the user is willing to receive (or pay) for this specific option.

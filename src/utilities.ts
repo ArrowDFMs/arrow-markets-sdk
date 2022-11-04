@@ -42,8 +42,7 @@ import {
     IArrowEvents,
     IArrowRegistry,
     IArrowRouter,
-    IERC20Metadata,
-    WAsset
+    IERC20Metadata
 } from "../abis"
 
 /***************************************
@@ -118,7 +117,7 @@ export async function getUnderlierAssetContract(
 
     const underlierAssetContract = new ethers.Contract(
         registry.getUnderlyingAssetAddress(ticker),
-        WAsset,
+        IERC20Metadata,
         wallet
     )
     return underlierAssetContract
@@ -379,27 +378,20 @@ export async function computeOptionChainAddress(
         | ethers.Wallet
         | ethers.Signer = providers.fuji
 ): Promise<string> {
-    // Get chain factory contract address from router
+    // Get local instance of router contract
     const router = getRouterContract(version, wallet)
 
-    let optionChainFactoryAddress = undefined
-    switch (version) {
-        case Version.V4:
-        case Version.V3:
-        case Version.COMPETITION:
-            optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
-            break
-        default:
-            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
-    }
+    const optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
 
     // Build salt for CREATE2
+
     const salt = ethers.utils.solidityKeccak256(
         ["address", "string", "uint256"],
         [optionChainFactoryAddress, ticker, readableExpiration]
     )
 
     // Compute option chain proxy address using CREATE2
+
     const optionChainAddress = ethers.utils.getCreate2Address(
         optionChainFactoryAddress,
         salt,
@@ -425,33 +417,27 @@ export async function computeShortAggregatorAddress(
         | ethers.Wallet
         | ethers.Signer = providers.fuji
 ): Promise<string> {
-    // Get chain factory contract address from router
+    // Get local instance of router contract
     const router = getRouterContract(version, wallet)
     
-    let shortAggregatorFactoryAddress = undefined
-    switch (version) {
-        case Version.V4:
-        case Version.V3:
-        case Version.COMPETITION:
-            shortAggregatorFactoryAddress = await router.getShortAggregatorFactoryAddress()
-            break
-        default:
-            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
-    }
-    // Build salt for CREATE2
+    const shortAggregatorFactoryAddress = await router.getShortAggregatorFactoryAddress()
+   
+    // Build salt for 
+    
     const salt = ethers.utils.solidityKeccak256(
         ["address", "string"],
         [shortAggregatorFactoryAddress, ticker]
     )
 
-    // Compute option chain proxy address using CREATE2
-    const optionChainAddress = ethers.utils.getCreate2Address(
+    // Compute option chain proxy address using 
+    
+    const shortAggregatorAddress = ethers.utils.getCreate2Address(
         shortAggregatorFactoryAddress,
         salt,
         bytecodeHashes.ArrowOptionChainProxy[version]
     )
 
-    return optionChainAddress
+    return shortAggregatorAddress
 }
 
 /**
@@ -468,10 +454,14 @@ export async function prepareDeliverOptionParams(
     wallet: ethers.Wallet | ethers.Signer
 ): Promise<DeliverOptionParams> {
 
-    if(optionOrderParams.orderType === OrderType.SHORT_CLOSE && optionOrderParams.payPremium === undefined) throw new Error(
-        'You must define `Pay Premium` parameter when closing a short position'
-    )
-
+    // Ensure that the payPremium boolean is set for closing short position.
+    if (
+        optionOrderParams.orderType === OrderType.SHORT_CLOSE &&
+        optionOrderParams.payPremium === undefined
+    ) {
+        throw new Error('`payPremium` boolean parameter must be set for closing a short position')
+    
+    }
     // Get stablecoin decimals
     const stablecoinDecimals = await (
         await getStablecoinContract(version, wallet)
@@ -493,21 +483,8 @@ export async function prepareDeliverOptionParams(
     )
     const formattedStrike = strikes.join("|")
 
-    let intQuantity = undefined
-    switch (version) {
-        case Version.V3:
-            intQuantity = optionOrderParams.quantity!
-
-            break
-        case Version.V4:
-        case Version.COMPETITION:
-            intQuantity = optionOrderParams.quantity! * quantityScaleFactor            
-
-            break
-        default:
-            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getStablecoinContract`
-    }
-
+    const intQuantity = optionOrderParams.quantity! * quantityScaleFactor   
+   
     // Hash and sign the option order parameters for on-chain verification
     const hashedValues = ethers.utils.solidityKeccak256(
         [
@@ -541,7 +518,7 @@ export async function prepareDeliverOptionParams(
 
     const value = optionOrderParams.thresholdPrice! * optionOrderParams.quantity!
     
-    let amountToApprove: BigNumber;
+    let amountToApprove: ethers.BigNumber
 
     if(optionOrderParams.orderType === OrderType.SHORT_OPEN) {
         let diffPrice: number = 0;
@@ -557,14 +534,18 @@ export async function prepareDeliverOptionParams(
             // put spread
             diffPrice = Math.abs(Number(optionOrderParams.strike[0]) - Number(optionOrderParams.strike[1]))
         }
-        amountToApprove = ethers.utils.parseUnits((optionOrderParams.quantity! * diffPrice).toString(), stablecoinDecimals)
+        amountToApprove = ethers.utils.parseUnits(
+            (
+                optionOrderParams.quantity! * diffPrice).toString(),
+                stablecoinDecimals
+            )
     } else {
-        amountToApprove = ethers.BigNumber.from(
-        ethers.utils.parseUnits(value.toFixed(stablecoinDecimals), stablecoinDecimals)
-    )
+        amountToApprove = ethers.BigNumber.from
+        (
+            ethers.utils.parseUnits(value.toFixed(stablecoinDecimals), stablecoinDecimals)
+        )
     }
    
-
     return {
         hashedValues,
         signature,
