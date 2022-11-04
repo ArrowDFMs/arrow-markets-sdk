@@ -7,7 +7,7 @@ import { ethers } from "ethers"
 import { Ticker, Version } from "./types"
 
 // Builds
-import { ArrowOptionChainProxy, AbstractArrowShortAggregator } from "../build"
+import { ArrowOptionChainProxy } from "../build"
 
 /*******************************
  *          CONSTANTS          *
