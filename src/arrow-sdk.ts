@@ -48,7 +48,7 @@ import {
     isValidVersion,
     prepareDeliverOptionParams
 } from "./utilities"
-import { off } from "process"
+
 
 /***************************************
  *           ARROW API CALLS           *
@@ -272,13 +272,21 @@ export async function submitOptionOrder(
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
-    //TO DO UPDATE THIS
-    if(deliverOptionParams.orderType === 3 && deliverOptionParams.payPremium === null) throw new Error('Must provide all of the order parameters')
+    
+    if(
+        deliverOptionParams.orderType === 3 && 
+        deliverOptionParams.payPremium === null
+    ) {
+        throw new Error('Must provide all of the order parameters')
+    }
 
-    if(deliverOptionParams.orderType === 2 || deliverOptionParams.orderType === 3) {
+    if(
+        deliverOptionParams.orderType === 2 || 
+        deliverOptionParams.orderType === 3
+    ) {
         const toAdd = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
         const orderSubmissionResponse = await axios.post(
-        urls.api[version] + toAdd,
+            urls.api[version] + toAdd,
             {   
                 pay_premium: deliverOptionParams.payPremium,
                 order_type: deliverOptionParams.orderType,
@@ -336,28 +344,18 @@ export async function settleOptions(
 ) {
     const router = getRouterContract(version, wallet)
 
-    switch (version) {
-        case Version.V3:
-        case Version.V4:
-        case Version.COMPETITION:
-            // Check if on-chain function call would work using `callStatic`
-            try {
-                await router.callStatic.settleOptions(
-                    owner,
-                    ticker,
-                    readableExpiration
-                )
-            } catch (err) {
-                throw new Error("Settlement call would fail on chain.")
-            }
-
-            // Send function call on-chain after `callStatic` success
-            await router.settleOptions(owner, ticker, readableExpiration)
-
-            break
-        default:
-            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
+    try {
+        await router.callStatic.settleOptions(
+            owner,
+            ticker,
+            readableExpiration
+        )
+    } catch (err) {
+        throw new Error("Settlement call would fail on chain.")
     }
+
+    // Send function call on-chain after `callStatic` success
+    await router.settleOptions(owner, ticker, readableExpiration)
 }
 
 /***************************************

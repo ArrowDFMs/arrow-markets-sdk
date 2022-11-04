@@ -40,7 +40,6 @@ export const DEFAULT_VERSION = Version.V4
 
 export const urls: any = {
     api: {
-        [Version.V3]: "https://fuji-v3-api.arrow.markets/v1",
         [Version.V4]: "https://fuji-v4-api.arrow.markets/v1",
         [Version.COMPETITION]: "https://competition-v3-api.arrow.markets/v1"
     },
@@ -56,11 +55,8 @@ export const providers: any = {
 export const addresses: any = {
     fuji: {
         router: {
-            [Version.V3]: ethers.utils.getAddress(
-                "0x31122CeF9891Ef661C99352266FA0FF0079a0e06"
-            ),
              [Version.V4]: ethers.utils.getAddress(
-                "0xdf85cc2E90b29a42D078B6F24c1AC3B54051E868"
+                "0xF4A4F32c75b44a759B128afca7145eA13460521a"
             ),
             [Version.COMPETITION]: ethers.utils.getAddress(
                 "0x33D1a0529D0C23f183fF1de346BDcA029dB0046E"
@@ -71,10 +67,6 @@ export const addresses: any = {
 
 export const bytecodeHashes: any = {
     ArrowOptionChainProxy: {
-        [Version.V3]: ethers.utils.solidityKeccak256(
-            ["bytes"],
-            [ArrowOptionChainProxy.v3.bytecode]
-        ),
         [Version.V4]: ethers.utils.solidityKeccak256(
             ["bytes"],
             [ArrowOptionChainProxy.v4.bytecode]
