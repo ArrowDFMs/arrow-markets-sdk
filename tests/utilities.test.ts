@@ -23,7 +23,7 @@ describe('Utility function tests', () => {
         const v3Router = await arrowsdk.getRouterContract(Version.V3)
         const contestRouter = await arrowsdk.getRouterContract(Version.COMPETITION)
 
-        expect(v4Router.address).toBe('0xa6EA0E47501627a964e11E31D2BD7D40452dff6F')
+        expect(v4Router.address).toBe('0xdf85cc2E90b29a42D078B6F24c1AC3B54051E868')
         expect(v3Router.address).toBe('0x31122CeF9891Ef661C99352266FA0FF0079a0e06')
         expect(contestRouter.address).toBe('0x33D1a0529D0C23f183fF1de346BDcA029dB0046E')
     })
@@ -53,7 +53,7 @@ describe('Utility function tests', () => {
         const v3RegistryContract = await arrowsdk.getRegistryContract(Version.V3)
         const contestRegistryContract = await arrowsdk.getRegistryContract(Version.COMPETITION)
 
-        expect(v4RegistryContract.address).toBe('0x20cee0F261F36A0CBcC3D38511D96C3AE0769706')
+        expect(v4RegistryContract.address).toBe('0x0510DC68959BaC7Ac7A249590bFD1dBa5C5Aeef4')
         expect(v3RegistryContract.address).toBe('0xe72175c1b3A9A287302276491bfb9ad275842876')
         expect(contestRegistryContract.address).toBe('0x342F0b981a90c9fD70483Bb85CfB897b1A6091Dc')
     })
@@ -62,7 +62,7 @@ describe('Utility function tests', () => {
         const optionChainAddress = await arrowsdk.computeOptionChainAddress(arrowsdk.Ticker.BTC, '10072022')
         
         expect(typeof(optionChainAddress)).toBe('string')
-        expect(optionChainAddress).toBe('0x5c8134cD585431032ae752fbfc8f1508711D8285')
+        expect(optionChainAddress).toBe('0x023B5Caf9C0D9eFAAe6CFAEaD88126670a0aee9B')
     })
 
     test('Expects to get current UTC time', async () => {
