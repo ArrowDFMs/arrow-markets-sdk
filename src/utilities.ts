@@ -4,7 +4,7 @@
 
 // Packages
 import axios from "axios"
-import { BigNumber, ethers } from "ethers"
+import { ethers } from "ethers"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import customParseFormat from "dayjs/plugin/customParseFormat"

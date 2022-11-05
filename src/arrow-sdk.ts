@@ -281,8 +281,8 @@ export async function submitOptionOrder(
     }
 
     if(
-        deliverOptionParams.orderType === 2 || 
-        deliverOptionParams.orderType === 3
+        deliverOptionParams.orderType === OrderType.SHORT_CLOSE || 
+        deliverOptionParams.orderType === OrderType.SHORT_OPEN
     ) {
         const toAdd = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
         const orderSubmissionResponse = await axios.post(
