@@ -116,7 +116,7 @@ export async function getUnderlierAssetContract(
     const registry = await getRegistryContract(version, wallet)
 
     const underlierAssetContract = new ethers.Contract(
-        registry.getUnderlyingAssetAddress(ticker),
+        await registry.getUnderlyingAssetAddress(ticker),
         IERC20Metadata,
         wallet
     )
@@ -455,12 +455,13 @@ export async function prepareDeliverOptionParams(
 ): Promise<DeliverOptionParams> {
 
     // Ensure that the payPremium boolean is set for closing short position.
-    if (
+    if 
+    (
         optionOrderParams.orderType === OrderType.SHORT_CLOSE &&
         optionOrderParams.payPremium === undefined
-    ) {
+    ) 
+    {
         throw new Error('`payPremium` boolean parameter must be set for closing a short position')
-    
     }
     // Get stablecoin decimals
     const stablecoinDecimals = await (

@@ -274,8 +274,8 @@ export async function submitOptionOrder(
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
     
     if(
-        deliverOptionParams.orderType === 3 && 
-        deliverOptionParams.payPremium === null
+        deliverOptionParams.orderType === OrderType.SHORT_CLOSE && 
+        deliverOptionParams.payPremium === undefined
     ) {
         throw new Error('Must provide all of the order parameters')
     }
@@ -284,9 +284,9 @@ export async function submitOptionOrder(
         deliverOptionParams.orderType === OrderType.SHORT_CLOSE || 
         deliverOptionParams.orderType === OrderType.SHORT_OPEN
     ) {
-        const toAdd = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
+        const orderEndpoint = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
         const orderSubmissionResponse = await axios.post(
-            urls.api[version] + toAdd,
+            urls.api[version] + orderEndpoint,
             {   
                 pay_premium: deliverOptionParams.payPremium,
                 order_type: deliverOptionParams.orderType,
