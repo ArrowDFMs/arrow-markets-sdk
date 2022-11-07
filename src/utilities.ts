@@ -4,7 +4,7 @@
 
 // Packages
 import axios from "axios"
-import { ethers } from "ethers"
+import { Contract, ethers } from "ethers"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import customParseFormat from "dayjs/plugin/customParseFormat"
@@ -42,7 +42,8 @@ import {
     IArrowEvents,
     IArrowRegistry,
     IArrowRouter,
-    IERC20Metadata
+    IERC20Metadata,
+    WrappedAsset
 } from "../abis"
 
 /***************************************
@@ -115,9 +116,9 @@ export async function getUnderlierAssetContract(
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
     const registry = await getRegistryContract(version, wallet)
 
-    const underlierAssetContract = new ethers.Contract(
+    const underlierAssetContract = new Contract(
         await registry.getUnderlyingAssetAddress(ticker),
-        IERC20Metadata,
+        WrappedAsset,
         wallet
     )
     return underlierAssetContract
