@@ -4,7 +4,7 @@
 
 // Packages
 import axios from "axios"
-import { ethers } from "ethers"
+import { Contract, ethers } from "ethers"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import customParseFormat from "dayjs/plugin/customParseFormat"
@@ -42,7 +42,8 @@ import {
     IArrowEvents,
     IArrowRegistry,
     IArrowRouter,
-    IERC20Metadata
+    IERC20Metadata,
+    WrappedAsset
 } from "../abis"
 
 /***************************************
@@ -95,6 +96,32 @@ export async function getStablecoinContract(
         wallet
     )
     return stablecoin
+}
+
+/**
+ * Get the wrapped underlier contract that is associated with Arrow's contract suite.
+ *
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
+ * @param wallet Wallet with which you want to connect the instance of the stablecoin contract. Default is Fuji provider.
+ * @returns Local instance of ethers.Contract for the wrapped underlier contract.
+ */
+export async function getUnderlierAssetContract(
+    ticker: Ticker,
+    version = DEFAULT_VERSION,
+    wallet:
+        | ethers.providers.Provider
+        | ethers.Wallet
+        | ethers.Signer = providers.fuji
+) {
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+    const registry = await getRegistryContract(version, wallet)
+
+    const underlierAssetContract = new Contract(
+        await registry.getUnderlyingAssetAddress(ticker),
+        WrappedAsset,
+        wallet
+    )
+    return underlierAssetContract
 }
 
 /**
@@ -352,27 +379,20 @@ export async function computeOptionChainAddress(
         | ethers.Wallet
         | ethers.Signer = providers.fuji
 ): Promise<string> {
-    // Get chain factory contract address from router
+    // Get local instance of router contract
     const router = getRouterContract(version, wallet)
 
-    let optionChainFactoryAddress = undefined
-    switch (version) {
-        case Version.V4:
-        case Version.V3:
-        case Version.COMPETITION:
-            optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
-            break
-        default:
-            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
-    }
+    const optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
 
     // Build salt for CREATE2
+
     const salt = ethers.utils.solidityKeccak256(
         ["address", "string", "uint256"],
         [optionChainFactoryAddress, ticker, readableExpiration]
     )
 
     // Compute option chain proxy address using CREATE2
+
     const optionChainAddress = ethers.utils.getCreate2Address(
         optionChainFactoryAddress,
         salt,
@@ -380,6 +400,45 @@ export async function computeOptionChainAddress(
     )
 
     return optionChainAddress
+}
+
+/**
+ * Compute address of on-chain short aggregator contract using CREATE2 functionality.
+ *
+ * @param ticker Ticker of the underlying asset.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
+ * @param wallet Wallet with which you want to connect the instance of the Arrow registry contract. Default is Fuji provider.
+ * @returns Address of the short aggregator corresponding to the passed ticker.
+ */
+export async function computeShortAggregatorAddress(
+    ticker: Ticker,
+    version = DEFAULT_VERSION,
+    wallet:
+        | ethers.providers.Provider
+        | ethers.Wallet
+        | ethers.Signer = providers.fuji
+): Promise<string> {
+    // Get local instance of router contract
+    const router = getRouterContract(version, wallet)
+    
+    const shortAggregatorFactoryAddress = await router.getShortAggregatorFactoryAddress()
+   
+    // Build salt for 
+    
+    const salt = ethers.utils.solidityKeccak256(
+        ["address", "string"],
+        [shortAggregatorFactoryAddress, ticker]
+    )
+
+    // Compute option chain proxy address using 
+    
+    const shortAggregatorAddress = ethers.utils.getCreate2Address(
+        shortAggregatorFactoryAddress,
+        salt,
+        bytecodeHashes.ArrowOptionChainProxy[version]
+    )
+
+    return shortAggregatorAddress
 }
 
 /**
@@ -395,6 +454,16 @@ export async function prepareDeliverOptionParams(
     version = DEFAULT_VERSION,
     wallet: ethers.Wallet | ethers.Signer
 ): Promise<DeliverOptionParams> {
+
+    // Ensure that the payPremium boolean is set for closing short position.
+    if 
+    (
+        optionOrderParams.orderType === OrderType.SHORT_CLOSE &&
+        optionOrderParams.payPremium === undefined
+    ) 
+    {
+        throw new Error('`payPremium` boolean parameter must be set for closing a short position')
+    }
     // Get stablecoin decimals
     const stablecoinDecimals = await (
         await getStablecoinContract(version, wallet)
@@ -416,21 +485,8 @@ export async function prepareDeliverOptionParams(
     )
     const formattedStrike = strikes.join("|")
 
-    let intQuantity = undefined
-    switch (version) {
-        case Version.V3:
-            intQuantity = optionOrderParams.quantity!
-
-            break
-        case Version.V4:
-        case Version.COMPETITION:
-            intQuantity = optionOrderParams.quantity! * quantityScaleFactor            
-
-            break
-        default:
-            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getStablecoinContract`
-    }
-
+    const intQuantity = optionOrderParams.quantity! * quantityScaleFactor   
+   
     // Hash and sign the option order parameters for on-chain verification
     const hashedValues = ethers.utils.solidityKeccak256(
         [
@@ -445,7 +501,7 @@ export async function prepareDeliverOptionParams(
             "uint256"     // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
         ],
         [
-            optionOrderParams.orderType === OrderType.LONG_OPEN,
+            optionOrderParams.orderType === OrderType.LONG_OPEN ||  optionOrderParams.orderType == OrderType.SHORT_OPEN,
             optionOrderParams.ticker,
             unixExpiration,
             optionOrderParams.expiration,
@@ -463,11 +519,35 @@ export async function prepareDeliverOptionParams(
     )
 
     const value = optionOrderParams.thresholdPrice! * optionOrderParams.quantity!
+    
+    let amountToApprove: ethers.BigNumber
 
-    const amountToApprove = ethers.BigNumber.from(
-        ethers.utils.parseUnits(value.toFixed(stablecoinDecimals), stablecoinDecimals)
-    )
-
+    if(optionOrderParams.orderType === OrderType.SHORT_OPEN) {
+        let diffPrice: number = 0;
+        if (optionOrderParams.contractType == 1 || optionOrderParams.contractType == 0){
+            // put
+            diffPrice = Number(optionOrderParams.strike[0])
+        }
+        else if (optionOrderParams.contractType == 2){
+            // call spread
+            diffPrice = Math.abs(Number(optionOrderParams.strike[1]) - Number(optionOrderParams.strike[0]))
+        }
+        else if (optionOrderParams.contractType == 3){
+            // put spread
+            diffPrice = Math.abs(Number(optionOrderParams.strike[0]) - Number(optionOrderParams.strike[1]))
+        }
+        amountToApprove = ethers.utils.parseUnits(
+            (
+                optionOrderParams.quantity! * diffPrice).toString(),
+                stablecoinDecimals
+            )
+    } else {
+        amountToApprove = ethers.BigNumber.from
+        (
+            ethers.utils.parseUnits(value.toFixed(stablecoinDecimals), stablecoinDecimals)
+        )
+    }
+   
     return {
         hashedValues,
         signature,

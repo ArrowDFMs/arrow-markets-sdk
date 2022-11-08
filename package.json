@@ -1,6 +1,6 @@
 {
     "name": "@arrow-markets/arrow-sdk",
-    "version": "1.2.6",
+    "version": "1.2.7",
     "description": "This SDK is meant to make it easier for developers to connect to the Arrow API.",
     "main": "lib/src/arrow-sdk.js",
     "types": "lib/src/arrow-sdk.d.ts",
@@ -29,7 +29,7 @@
     "homepage": "https://github.com/ArrowDFMs/arrow-markets-sdk#readme",
     "dependencies": {
         "axios": "0.24.0",
-        "dayjs": "1.11.5",
+        "dayjs": "^1.11.6",
         "dotenv": "10.0.0",
         "ethers": "5.5.2"
     },

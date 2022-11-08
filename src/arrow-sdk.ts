@@ -32,12 +32,14 @@ import {
 // Helpers
 import {
     computeOptionChainAddress,
+    computeShortAggregatorAddress,
     getCurrentTimeUTC,
     getEventsContract,
     getExpirationTimestamp,
     getReadableTimestamp,
     getRegistryContract,
     getRouterContract,
+    getUnderlierAssetContract,
     getStablecoinContract,
     getTimeUTC,
     getUnderlierMarketChart,
@@ -46,6 +48,7 @@ import {
     isValidVersion,
     prepareDeliverOptionParams
 } from "./utilities"
+
 
 /***************************************
  *           ARROW API CALLS           *
@@ -269,24 +272,54 @@ export async function submitOptionOrder(
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+    
+    if(
+        deliverOptionParams.orderType === OrderType.SHORT_CLOSE && 
+        deliverOptionParams.payPremium === undefined
+    ) {
+        throw new Error('Must provide all of the order parameters')
+    }
 
-    // Submit option order through API
-    const orderSubmissionResponse = await axios.post(
-        urls.api[version] + "/submit-order",
-        {
-            order_type: deliverOptionParams.orderType,
-            ticker: deliverOptionParams.ticker,
-            expiration: deliverOptionParams.expiration,
-            strike: deliverOptionParams.formattedStrike,
-            contract_type: deliverOptionParams.contractType,
-            quantity: deliverOptionParams.quantity,
-            threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
-            hashed_params: deliverOptionParams.hashedValues,
-            signature: deliverOptionParams.signature
-        }
-    )
-    // Return all data from response
-    return orderSubmissionResponse.data
+    if(
+        deliverOptionParams.orderType === OrderType.SHORT_CLOSE || 
+        deliverOptionParams.orderType === OrderType.SHORT_OPEN
+    ) {
+        const orderEndpoint = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
+        const orderSubmissionResponse = await axios.post(
+            urls.api[version] + orderEndpoint,
+            {   
+                pay_premium: deliverOptionParams.payPremium,
+                order_type: deliverOptionParams.orderType,
+                ticker: deliverOptionParams.ticker,
+                expiration: deliverOptionParams.expiration,
+                strike: deliverOptionParams.formattedStrike,
+                contract_type: deliverOptionParams.contractType,
+                quantity: deliverOptionParams.quantity,
+                threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+                hashed_params: deliverOptionParams.hashedValues,
+                signature: deliverOptionParams.signature
+            }
+        )
+        return orderSubmissionResponse.data
+    } else {
+        // Submit option order through API
+        const orderSubmissionResponse = await axios.post(
+            urls.api[version] + "/submit-order",
+            {
+                order_type: deliverOptionParams.orderType,
+                ticker: deliverOptionParams.ticker,
+                expiration: deliverOptionParams.expiration,
+                strike: deliverOptionParams.formattedStrike,
+                contract_type: deliverOptionParams.contractType,
+                quantity: deliverOptionParams.quantity,
+                threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+                hashed_params: deliverOptionParams.hashedValues,
+                signature: deliverOptionParams.signature
+            }
+        )
+        // Return all data from response
+        return orderSubmissionResponse.data
+    }
 }
 
 /***************************************
@@ -311,28 +344,18 @@ export async function settleOptions(
 ) {
     const router = getRouterContract(version, wallet)
 
-    switch (version) {
-        case Version.V3:
-        case Version.V4:
-        case Version.COMPETITION:
-            // Check if on-chain function call would work using `callStatic`
-            try {
-                await router.callStatic.settleOptions(
-                    owner,
-                    ticker,
-                    readableExpiration
-                )
-            } catch (err) {
-                throw new Error("Settlement call would fail on chain.")
-            }
-
-            // Send function call on-chain after `callStatic` success
-            await router.settleOptions(owner, ticker, readableExpiration)
-
-            break
-        default:
-            throw UNSUPPORTED_VERSION_ERROR // Never reached because of the check in `getRouterContract`
+    try {
+        await router.callStatic.settleOptions(
+            owner,
+            ticker,
+            readableExpiration
+        )
+    } catch (err) {
+        throw new Error("Settlement call would fail on chain.")
     }
+
+    // Send function call on-chain after `callStatic` success
+    await router.settleOptions(owner, ticker, readableExpiration)
 }
 
 /***************************************
@@ -372,9 +395,11 @@ const arrowsdk = {
 
     // Blockchain functions
     computeOptionChainAddress,
+    computeShortAggregatorAddress,
     getEventsContract,
     getRegistryContract,
     getRouterContract,
+    getUnderlierAssetContract,
     getStablecoinContract,
     prepareDeliverOptionParams,
     settleOptions

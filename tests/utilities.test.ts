@@ -20,41 +20,33 @@ dayjs.extend(customParseFormat)
 describe('Utility function tests', () => {
     test('Expects to return the router contract', async () => {
         const v4Router = await arrowsdk.getRouterContract(Version.V4)
-        const v3Router = await arrowsdk.getRouterContract(Version.V3)
         const contestRouter = await arrowsdk.getRouterContract(Version.COMPETITION)
 
-        expect(v4Router.address).toBe('0xa6EA0E47501627a964e11E31D2BD7D40452dff6F')
-        expect(v3Router.address).toBe('0x31122CeF9891Ef661C99352266FA0FF0079a0e06')
+        expect(v4Router.address).toBe('0xF4A4F32c75b44a759B128afca7145eA13460521a')
         expect(contestRouter.address).toBe('0x33D1a0529D0C23f183fF1de346BDcA029dB0046E')
     })
 
     test('Expects to return the stablecoin contract', async () => {
         const v4Stablecoin = await arrowsdk.getStablecoinContract(Version.V4)
-        const v3Stablecoin = await arrowsdk.getStablecoinContract(Version.V3)
         const contestStablecoin = await arrowsdk.getStablecoinContract(Version.COMPETITION)
 
         expect(v4Stablecoin.address).toBe('0x45ea5d57BA80B5e3b0Ed502e9a08d568c96278F9')
-        expect(v3Stablecoin.address).toBe('0x45ea5d57BA80B5e3b0Ed502e9a08d568c96278F9')
         expect(contestStablecoin.address).toBe('0x6b8dA544EB543d7f3B533d79267b778e7427B288')
     })
 
     test('Expects to return the events contract', async () => {
         const v4EventsContract = await arrowsdk.getStablecoinContract(Version.V4)
-        const v3EventsContract = await arrowsdk.getEventsContract(Version.V3)
         const contestEventsContract = await arrowsdk.getEventsContract(Version.COMPETITION)
 
         expect(v4EventsContract.address).toBe('0x45ea5d57BA80B5e3b0Ed502e9a08d568c96278F9')
-        expect(v3EventsContract.address).toBe('0x932BC618C972Ef2703cD66A751747d71e7A1BB3D')
         expect(contestEventsContract.address).toBe('0x4dc28938e5112c5729E582F80363f26982Afcc50')
     })
 
     test('Expects to return the registry contract', async () => {
         const v4RegistryContract = await arrowsdk.getRegistryContract(Version.V4)
-        const v3RegistryContract = await arrowsdk.getRegistryContract(Version.V3)
         const contestRegistryContract = await arrowsdk.getRegistryContract(Version.COMPETITION)
 
-        expect(v4RegistryContract.address).toBe('0x20cee0F261F36A0CBcC3D38511D96C3AE0769706')
-        expect(v3RegistryContract.address).toBe('0xe72175c1b3A9A287302276491bfb9ad275842876')
+        expect(v4RegistryContract.address).toBe('0x0510DC68959BaC7Ac7A249590bFD1dBa5C5Aeef4')
         expect(contestRegistryContract.address).toBe('0x342F0b981a90c9fD70483Bb85CfB897b1A6091Dc')
     })
 
@@ -62,7 +54,7 @@ describe('Utility function tests', () => {
         const optionChainAddress = await arrowsdk.computeOptionChainAddress(arrowsdk.Ticker.BTC, '10072022')
         
         expect(typeof(optionChainAddress)).toBe('string')
-        expect(optionChainAddress).toBe('0x5c8134cD585431032ae752fbfc8f1508711D8285')
+        expect(optionChainAddress).toBe('0x023B5Caf9C0D9eFAAe6CFAEaD88126670a0aee9B')
     })
 
     test('Expects to get current UTC time', async () => {
@@ -115,11 +107,10 @@ describe('Utility function tests', () => {
     })
 
     test('Expects to determine if version is valid', async () => {
-        const valid = arrowsdk.isValidVersion(Version.V3)
         const invalid = arrowsdk.isValidVersion('INVALID' as Version)
         
         expect(invalid).toBe(false)
-        expect(valid).toBe(true)
+        expect(invalid).toBe(true)
     })
 
     test('Excepts to prepare deliver option params', async () => {
