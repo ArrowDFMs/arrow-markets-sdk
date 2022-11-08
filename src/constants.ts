@@ -57,7 +57,7 @@ export const addresses: any = {
     fuji: {
         router: {
              [Version.V4]: ethers.utils.getAddress(
-                "0x6482221131Fd4d5b3631B9c2FeF3D5C10f9e2cF1"
+                "0xc4dADDc8b63B74939E8906c8EEb11572948307B4"
             ),
             [Version.COMPETITION]: ethers.utils.getAddress(
                 "0x33D1a0529D0C23f183fF1de346BDcA029dB0046E"
