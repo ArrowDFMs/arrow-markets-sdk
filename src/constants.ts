@@ -44,7 +44,6 @@ export const urls: any = {
         [Version.COMPETITION]: "https://competition-v3-api.arrow.markets/v1"
     },
     provider: {
-        // fuji: "https://devnet.arrow.markets/v1"
         fuji: "https://api.avax-test.network/ext/bc/C/rpc"
     }
 }
