@@ -9,7 +9,6 @@ import { ethers } from "ethers"
  **********************************/
 
 export enum Version {
-    V3 = "v3",
     V4 = "v4",
     COMPETITION = "competition"
 }
