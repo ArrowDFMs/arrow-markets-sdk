@@ -41,7 +41,7 @@ export const DEFAULT_VERSION = Version.V4
 export const urls: any = {
     api: {
         [Version.V4]: "https://fuji-v4-prime-api.arrow.markets/v1",
-        [Version.COMPETITION]: "https://competition-v3-api.arrow.markets/v1"
+        [Version.COMPETITION]: "https://competition-v4-api.arrow.markets/v1"
     },
     provider: {
         fuji: "https://api.avax-test.network/ext/bc/C/rpc"
@@ -59,7 +59,7 @@ export const addresses: any = {
                 "0xc4dADDc8b63B74939E8906c8EEb11572948307B4"
             ),
             [Version.COMPETITION]: ethers.utils.getAddress(
-                "0x33D1a0529D0C23f183fF1de346BDcA029dB0046E"
+                "0xDDA777Fe8E346055f5A43273e047440B19Dd7d4f"
             )
         }
     }
