@@ -267,7 +267,49 @@ export async function getStrikeGrid(
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
-export async function submitOptionOrder(
+export async function submitLongOptionOrder(
+    deliverOptionParams: DeliverOptionParams[],
+    version = DEFAULT_VERSION
+) {
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+
+    // Submit multiple option orders through API
+    let params: any[] = [];
+    
+    deliverOptionParams.map(function(order) 
+    {
+        params.push(
+        {
+            'order_type': order.orderType,
+            'ticker': order.ticker,
+            'expiration': order.expiration,
+            'strike': order.formattedStrike,
+            'contract_type': order.contractType,
+            'quantity': order.quantity,
+            'threshold_price': order.bigNumberThresholdPrice.toString(),
+            'hashed_params': order.hashedValues,
+            'signature': order.signature
+        })
+    })
+
+    const orderSubmissionResponse = await axios.post(
+        urls.api[version] + '/submit-order',
+        {
+            'params': params!
+        }
+    )
+
+    // Return all data from response
+    return orderSubmissionResponse.data
+}
+/**
+ * Submit an option order to the API to compute the live price and submit a transaction to the blockchain.
+ *
+ * @param deliverOptionParams Object containing parameters necessary to create an option order on Arrow.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
+ * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
+ */
+export async function submitShortOptionOrder(
     deliverOptionParams: DeliverOptionParams[],
     version = DEFAULT_VERSION
 ) {
@@ -279,58 +321,25 @@ export async function submitOptionOrder(
     ) {
         throw new Error('Must provide all of the order parameters')
     }
+  
+    const orderEndpoint = deliverOptionParams[0].orderType === 2 ? "/open-short-position" : "/close-short-position"
+    const orderSubmissionResponse = await axios.post(
+        urls.api[version] + orderEndpoint,
+        {   
+            pay_premium: deliverOptionParams[0].payPremium,
+            order_type: deliverOptionParams[0].orderType,
+            ticker: deliverOptionParams[0].ticker,
+            expiration: deliverOptionParams[0].expiration,
+            strike: deliverOptionParams[0].formattedStrike,
+            contract_type: deliverOptionParams[0].contractType,
+            quantity: deliverOptionParams[0].quantity,
+            threshold_price: deliverOptionParams[0].bigNumberThresholdPrice.toString(),
+            hashed_params: deliverOptionParams[0].hashedValues,
+            signature: deliverOptionParams[0].signature
+        }
+    )
 
-    if(
-        deliverOptionParams[0].orderType === OrderType.SHORT_CLOSE || 
-        deliverOptionParams[0].orderType === OrderType.SHORT_OPEN
-    ) {
-        const orderEndpoint = deliverOptionParams[0].orderType === 2 ? "/open-short-position" : "/close-short-position"
-        const orderSubmissionResponse = await axios.post(
-            urls.api[version] + orderEndpoint,
-            {   
-                pay_premium: deliverOptionParams[0].payPremium,
-                order_type: deliverOptionParams[0].orderType,
-                ticker: deliverOptionParams[0].ticker,
-                expiration: deliverOptionParams[0].expiration,
-                strike: deliverOptionParams[0].formattedStrike,
-                contract_type: deliverOptionParams[0].contractType,
-                quantity: deliverOptionParams[0].quantity,
-                threshold_price: deliverOptionParams[0].bigNumberThresholdPrice.toString(),
-                hashed_params: deliverOptionParams[0].hashedValues,
-                signature: deliverOptionParams[0].signature
-            }
-        )
-        return orderSubmissionResponse.data
-    } else {
-        // Submit multiple option orders through API
-        let params: any[] = [];
-        
-        deliverOptionParams.map(function(order) 
-        {
-            params.push(
-            {
-                'order_type': order.orderType,
-                'ticker': order.ticker,
-                'expiration': order.expiration,
-                'strike': order.formattedStrike,
-                'contract_type': order.contractType,
-                'quantity': order.quantity,
-                'threshold_price': order.bigNumberThresholdPrice.toString(),
-                'hashed_params': order.hashedValues,
-                'signature': order.signature
-            })
-        })
-
-        const orderSubmissionResponse = await axios.post(
-            urls.api[version] + '/submit-order',
-            {
-                'params': params!
-            }
-        )
-
-        // Return all data from response
-        return orderSubmissionResponse.data
-    }
+    return orderSubmissionResponse.data
     
 }
 
@@ -403,7 +412,8 @@ const arrowsdk = {
     estimateOptionPriceAndGreeks,
     getRecommendedOption,
     getStrikeGrid,
-    submitOptionOrder,
+    submitLongOptionOrder,
+    submitShortOptionOrder,
 
     // Blockchain functions
     computeOptionChainAddress,
