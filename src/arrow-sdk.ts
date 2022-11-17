@@ -311,32 +311,32 @@ export async function submitLongOptionOrder(
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
 export async function submitShortOptionOrder(
-    deliverOptionParams: DeliverOptionParams[],
+    deliverOptionParams: DeliverOptionParams,
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
     if(
-        deliverOptionParams[0].orderType === OrderType.SHORT_CLOSE && 
-        deliverOptionParams[0].payPremium === undefined
+        deliverOptionParams.orderType === OrderType.SHORT_CLOSE && 
+        deliverOptionParams.payPremium === undefined
     ) {
         throw new Error('Must provide all of the order parameters')
     }
   
-    const orderEndpoint = deliverOptionParams[0].orderType === 2 ? "/open-short-position" : "/close-short-position"
+    const orderEndpoint = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
     const orderSubmissionResponse = await axios.post(
         urls.api[version] + orderEndpoint,
         {   
-            pay_premium: deliverOptionParams[0].payPremium,
-            order_type: deliverOptionParams[0].orderType,
-            ticker: deliverOptionParams[0].ticker,
-            expiration: deliverOptionParams[0].expiration,
-            strike: deliverOptionParams[0].formattedStrike,
-            contract_type: deliverOptionParams[0].contractType,
-            quantity: deliverOptionParams[0].quantity,
-            threshold_price: deliverOptionParams[0].bigNumberThresholdPrice.toString(),
-            hashed_params: deliverOptionParams[0].hashedValues,
-            signature: deliverOptionParams[0].signature
+            pay_premium: deliverOptionParams.payPremium,
+            order_type: deliverOptionParams.orderType,
+            ticker: deliverOptionParams.ticker,
+            expiration: deliverOptionParams.expiration,
+            strike: deliverOptionParams.formattedStrike,
+            contract_type: deliverOptionParams.contractType,
+            quantity: deliverOptionParams.quantity,
+            threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
+            hashed_params: deliverOptionParams.hashedValues,
+            signature: deliverOptionParams.signature
         }
     )
 
