@@ -261,7 +261,7 @@ export async function getStrikeGrid(
 }
 
 /**
- * Submit multiple option order to the API to compute the live price and submit a transaction to the blockchain.
+ * Submit multiple option orders to the API to compute the live price and submit a transaction to the blockchain.
  *
  * @param deliverOptionParams[] Object containing parameters necessary to create an option order on Arrow.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
@@ -304,7 +304,7 @@ export async function submitLongOptionOrder(
 }
 
 /**
- * Submit an short option order to the API to compute the live price and submit a transaction to the blockchain.
+ * Submit a short option order to the API to compute the live price and submit a transaction to the blockchain.
  *
  * @param deliverOptionParams Object containing parameters necessary to create an option order on Arrow.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
