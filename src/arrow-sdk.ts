@@ -268,58 +268,70 @@ export async function getStrikeGrid(
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
 export async function submitOptionOrder(
-    deliverOptionParams: DeliverOptionParams,
+    deliverOptionParams: DeliverOptionParams[],
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
-    
+
     if(
-        deliverOptionParams.orderType === OrderType.SHORT_CLOSE && 
-        deliverOptionParams.payPremium === undefined
+        deliverOptionParams[0].orderType === OrderType.SHORT_CLOSE && 
+        deliverOptionParams[0].payPremium === undefined
     ) {
         throw new Error('Must provide all of the order parameters')
     }
 
     if(
-        deliverOptionParams.orderType === OrderType.SHORT_CLOSE || 
-        deliverOptionParams.orderType === OrderType.SHORT_OPEN
+        deliverOptionParams[0].orderType === OrderType.SHORT_CLOSE || 
+        deliverOptionParams[0].orderType === OrderType.SHORT_OPEN
     ) {
-        const orderEndpoint = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
+        const orderEndpoint = deliverOptionParams[0].orderType === 2 ? "/open-short-position" : "/close-short-position"
         const orderSubmissionResponse = await axios.post(
             urls.api[version] + orderEndpoint,
             {   
-                pay_premium: deliverOptionParams.payPremium,
-                order_type: deliverOptionParams.orderType,
-                ticker: deliverOptionParams.ticker,
-                expiration: deliverOptionParams.expiration,
-                strike: deliverOptionParams.formattedStrike,
-                contract_type: deliverOptionParams.contractType,
-                quantity: deliverOptionParams.quantity,
-                threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
-                hashed_params: deliverOptionParams.hashedValues,
-                signature: deliverOptionParams.signature
+                pay_premium: deliverOptionParams[0].payPremium,
+                order_type: deliverOptionParams[0].orderType,
+                ticker: deliverOptionParams[0].ticker,
+                expiration: deliverOptionParams[0].expiration,
+                strike: deliverOptionParams[0].formattedStrike,
+                contract_type: deliverOptionParams[0].contractType,
+                quantity: deliverOptionParams[0].quantity,
+                threshold_price: deliverOptionParams[0].bigNumberThresholdPrice.toString(),
+                hashed_params: deliverOptionParams[0].hashedValues,
+                signature: deliverOptionParams[0].signature
             }
         )
         return orderSubmissionResponse.data
     } else {
-        // Submit option order through API
-        const orderSubmissionResponse = await axios.post(
-            urls.api[version] + "/submit-order",
+        // Submit multiple option orders through API
+        let params: any[] = [];
+        
+        deliverOptionParams.map(function(order) 
+        {
+            params.push(
             {
-                order_type: deliverOptionParams.orderType,
-                ticker: deliverOptionParams.ticker,
-                expiration: deliverOptionParams.expiration,
-                strike: deliverOptionParams.formattedStrike,
-                contract_type: deliverOptionParams.contractType,
-                quantity: deliverOptionParams.quantity,
-                threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
-                hashed_params: deliverOptionParams.hashedValues,
-                signature: deliverOptionParams.signature
+                'order_type': order.orderType,
+                'ticker': order.ticker,
+                'expiration': order.expiration,
+                'strike': order.formattedStrike,
+                'contract_type': order.contractType,
+                'quantity': order.quantity,
+                'threshold_price': order.bigNumberThresholdPrice.toString(),
+                'hashed_params': order.hashedValues,
+                'signature': order.signature
+            })
+        })
+
+        const orderSubmissionResponse = await axios.post(
+            urls.api[version] + '/submit-order',
+            {
+                'params': params!
             }
         )
+
         // Return all data from response
         return orderSubmissionResponse.data
     }
+    
 }
 
 /***************************************
