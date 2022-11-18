@@ -274,10 +274,9 @@ export async function submitLongOptionOrder(
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
     // Submit multiple option orders through API
-    let params: any[] = [];
+    let params: any[] = []
     
-    deliverOptionParams.map(function(order) 
-    {
+    deliverOptionParams.map(order => {
         params.push(
         {
             'order_type': order.orderType,

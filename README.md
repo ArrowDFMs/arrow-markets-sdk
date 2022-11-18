@@ -200,7 +200,7 @@ The code below is used to place an order on the Arrow platform. There are severa
 Step 1: Prepare the `deliverOption()` function call parameters. This includes hashing the option parameters and having the user sign the hash.
 
 ```javascript
-const deliverOptionParams: DeliverOptionParams[] = await arrowsdk.prepareDeliverOptionParams(optionOrderParams, version, wallet)
+const deliverOptionParams: DeliverOptionParams[] = await arrowsdk.prepareDeliverOptionParams([optionOrderParams], version, wallet)
 ```
 
 Inside `prepareDeliverOptionParams()` we can see how the hash and signature are produced

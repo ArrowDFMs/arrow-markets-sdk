@@ -450,19 +450,16 @@ export async function computeShortAggregatorAddress(
  * @returns JSON that contains the variables necessary in completing the option order.
  */
 export async function prepareDeliverOptionParams(
-    // optionOrderParams: OptionOrderParams,
     optionOrderParamsList: OptionOrderParams[],
     version = DEFAULT_VERSION,
     wallet: ethers.Wallet | ethers.Signer
 ){
      const preparedParams = await Promise.all(optionOrderParamsList.map(async optionOrderParams => {
         // Ensure that the payPremium boolean is set for closing short position.
-        if 
-        (
+        if (
             optionOrderParams.orderType === OrderType.SHORT_CLOSE &&
             optionOrderParams.payPremium === undefined
-        ) 
-        {
+        ) {
             throw new Error('`payPremium` boolean parameter must be set for closing a short position')
         }
 
@@ -520,7 +517,7 @@ export async function prepareDeliverOptionParams(
         let amountToApprove: ethers.BigNumber
 
         if(optionOrderParams.orderType === OrderType.SHORT_OPEN) {
-            let diffPrice: number = 0;
+            let diffPrice: number = 0
             if (optionOrderParams.contractType == 1 || optionOrderParams.contractType == 0){
                 // put
                 diffPrice = Number(optionOrderParams.strike[0])
@@ -555,7 +552,7 @@ export async function prepareDeliverOptionParams(
             bigNumberStrike,
             bigNumberThresholdPrice: thresholdPrice
         }
-    }));
+    }))
     
-    return preparedParams;
+    return preparedParams
 }
