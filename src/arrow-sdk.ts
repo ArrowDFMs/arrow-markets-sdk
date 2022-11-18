@@ -263,7 +263,7 @@ export async function getStrikeGrid(
 /**
  * Submit multiple option orders to the API to compute the live price and submit a transaction to the blockchain.
  *
- * @param deliverOptionParams[] Object containing parameters necessary to create an option order on Arrow.
+ * @param deliverOptionParams[] Array of objects containing parameters necessary to create an option order on Arrow.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
