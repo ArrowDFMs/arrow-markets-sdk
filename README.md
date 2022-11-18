@@ -96,6 +96,57 @@ Outputs:
     "tx_hash", // Hash of the transaction that was submitted upon successful API request.
     "execution_price" // Price that the user was charged per option contract in the order.
 }
+
+```
+\
+Submit Order: `/open-short-position`\
+`POST` request
+```
+Body: {
+    "order_type", // 0 for open long, 1 for close long, 2 for open short, and 3 for close short.
+    "ticker", // String to indicate a particular asset ("AVAX", "ETH", or "BTC").
+    "expiration", // Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+    "strike", // Price at which contract becomes active at expiration.
+    "contract_type", // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+    "quantity", // Number of contracts desired in the order.
+    "threshold_price", // Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+    "hashed_params", // Stringified hash of parameters.
+    "signature" // User's signature of the hashed parameters.
+}
+```
+\
+Outputs:
+```
+{
+    "tx_hash", // Hash of the transaction that was submitted upon successful API request.
+    "execution_price" // Price that the user was charged per option contract in the order.
+}
+
+```
+\
+Submit Order: `/close-short-position`\
+`POST` request
+```
+Body: {
+    "pay_premium", // true if the user plans on paying the premium using their stablecoin, false if the user wants to pay using their collateral 
+    "order_type", // 0 for open long, 1 for close long, 2 for open short, and 3 for close short.
+    "ticker", // String to indicate a particular asset ("AVAX", "ETH", or "BTC").
+    "expiration", // Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+    "strike", // Price at which contract becomes active at expiration.
+    "contract_type", // 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+    "quantity", // Number of contracts desired in the order.
+    "threshold_price", // Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+    "hashed_params", // Stringified hash of parameters.
+    "signature" // User's signature of the hashed parameters.
+}
+```
+\
+Outputs:
+```
+{
+    "tx_hash", // Hash of the transaction that was submitted upon successful API request.
+    "execution_price" // Price that the user was charged per option contract in the order.
+}
 ```
 
 # Arrow Contracts
@@ -108,9 +159,9 @@ The important contracts are the ArrowRouter, ArrowRegistry, and ArrowEvents cont
 
 Developers may find it useful to access logs from the Arrow Events contract. Standard events filters from `web3.py`, `web3.js` and `ethers.js` can be used.
 
-The most relevant events are likely the `NewLiabilityCreation` and `NewLiabilityDestruction` events. The rest of the events can be found in the `IArrowEvents.json` ABI files.
+The most relevant events are likely the `NewLiabilityCreation`, `NewLiabilityDestruction`, `NewShortPositionCreation` and `NewShortPositionDestruction` events. The rest of the events can be found in the `IArrowEvents.json` ABI files.
 
-The NewLiabilityCreation and NewLiabilityDestruction events look as follows:
+The NewLiabilityCreation, NewLiabilityDestruction, NewShortPositionCreation, and NewShortPositionDestruction events look as follows:
 ```
 {
     "ownerAddress": address, // Indexed address of the owner of the new liability
@@ -149,7 +200,7 @@ The code below is used to place an order on the Arrow platform. There are severa
 Step 1: Prepare the `deliverOption()` function call parameters. This includes hashing the option parameters and having the user sign the hash.
 
 ```javascript
-const deliverOptionParams: DeliverOptionParams = await arrowsdk.prepareDeliverOptionParams(optionOrderParams, version, wallet)
+const deliverOptionParams: DeliverOptionParams[] = await arrowsdk.prepareDeliverOptionParams([optionOrderParams], version, wallet)
 ```
 
 Inside `prepareDeliverOptionParams()` we can see how the hash and signature are produced
@@ -215,13 +266,13 @@ if (deliverOptionParams.orderType === OrderType.LONG_OPEN) {
     }
 }
 ```
-Step 3: Submit option order request to API.
+Step 3: Submit long option order request to API.
 
 The `tx_hash` and `execution_price` parameters will be populated if the API call is successful. In the case where the API call is unsuccessful, more details are provided by the response from axios, so make sure you use a try-catch block.
 ```javascript
 // Submit order to API and get response
 try {
-    const {tx_hash, execution_price} = await arrowsdk.submitOptionOrder(deliverOptionParams, version)
+    const {tx_hash, execution_price} = await arrowsdk.submitLongOptionOrder(deliverOptionParams, version)
 } catch(err) {
     console.log(err)
 }

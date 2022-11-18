@@ -450,112 +450,109 @@ export async function computeShortAggregatorAddress(
  * @returns JSON that contains the variables necessary in completing the option order.
  */
 export async function prepareDeliverOptionParams(
-    optionOrderParams: OptionOrderParams,
+    optionOrderParamsList: OptionOrderParams[],
     version = DEFAULT_VERSION,
     wallet: ethers.Wallet | ethers.Signer
-): Promise<DeliverOptionParams> {
-
-    // Ensure that the payPremium boolean is set for closing short position.
-    if 
-    (
-        optionOrderParams.orderType === OrderType.SHORT_CLOSE &&
-        optionOrderParams.payPremium === undefined
-    ) 
-    {
-        throw new Error('`payPremium` boolean parameter must be set for closing a short position')
-    }
-    // Get stablecoin decimals
-    const stablecoinDecimals = await (
-        await getStablecoinContract(version, wallet)
-    ).decimals()
-
-    // Define scope for variables
-    const thresholdPrice = ethers.utils.parseUnits(
-        optionOrderParams.thresholdPrice!.toFixed(stablecoinDecimals),
-        stablecoinDecimals
-    )
-    const unixExpiration = getExpirationTimestamp(
-        optionOrderParams.expiration
-    ).unixTimestamp
-    const strikes = optionOrderParams.strike.map(
-        (strike) => strike.toFixed(2)
-    )
-    const bigNumberStrike = strikes.map((strike) =>
-        ethers.utils.parseUnits(strike, stablecoinDecimals)
-    )
-    const formattedStrike = strikes.join("|")
-
-    const intQuantity = optionOrderParams.quantity! * quantityScaleFactor   
-   
-    // Hash and sign the option order parameters for on-chain verification
-    const hashedValues = ethers.utils.solidityKeccak256(
-        [
-            "bool",       // buyFlag - Boolean to indicate whether this is a buy (true) or sell (false).
-            "string",     // ticker - String to indicate a particular asset ("AVAX", "ETH", or "BTC").
-            "uint256",    // expiration - Date in Unix timestamp. Must be 8:00 AM UTC (e.g. 1643097600 for January 25th, 2022).
-            "uint256",    // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
-            "uint256[2]", // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
-            "string",     // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
-            "uint256",    // contractType - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
-            "uint256",    // quantity - Integer number of contracts desired in the order. Has to be scaled by supported decimals (10**2).
-            "uint256"     // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
-        ],
-        [
-            optionOrderParams.orderType === OrderType.LONG_OPEN ||  optionOrderParams.orderType == OrderType.SHORT_OPEN,
-            optionOrderParams.ticker,
-            unixExpiration,
-            optionOrderParams.expiration,
-            bigNumberStrike,
-            formattedStrike,
-            optionOrderParams.contractType,
-            intQuantity,
-            thresholdPrice
-        ]
-    )
-
-    // Note that we are signing a message, not a transaction
-    const signature = await wallet.signMessage(
-        ethers.utils.arrayify(hashedValues)
-    )
-
-    const value = optionOrderParams.thresholdPrice! * optionOrderParams.quantity!
-    
-    let amountToApprove: ethers.BigNumber
-
-    if(optionOrderParams.orderType === OrderType.SHORT_OPEN) {
-        let diffPrice: number = 0;
-        if (optionOrderParams.contractType == 1 || optionOrderParams.contractType == 0){
-            // put
-            diffPrice = Number(optionOrderParams.strike[0])
+){
+     const preparedParams = await Promise.all(optionOrderParamsList.map(async optionOrderParams => {
+        // Ensure that the payPremium boolean is set for closing short position.
+        if (
+            optionOrderParams.orderType === OrderType.SHORT_CLOSE &&
+            optionOrderParams.payPremium === undefined
+        ) {
+            throw new Error('`payPremium` boolean parameter must be set for closing a short position')
         }
-        else if (optionOrderParams.contractType == 2){
-            // call spread
-            diffPrice = Math.abs(Number(optionOrderParams.strike[1]) - Number(optionOrderParams.strike[0]))
-        }
-        else if (optionOrderParams.contractType == 3){
-            // put spread
-            diffPrice = Math.abs(Number(optionOrderParams.strike[0]) - Number(optionOrderParams.strike[1]))
-        }
-        amountToApprove = ethers.utils.parseUnits(
-            (
-                optionOrderParams.quantity! * diffPrice).toString(),
-                stablecoinDecimals
-            )
-    } else {
-        amountToApprove = ethers.BigNumber.from
-        (
-            ethers.utils.parseUnits(value.toFixed(stablecoinDecimals), stablecoinDecimals)
+
+        // Get stablecoin decimals
+        const stablecoinDecimals = await (
+            await getStablecoinContract(version, wallet)
+        ).decimals()
+
+        const thresholdPrice = ethers.utils.parseUnits(
+            optionOrderParams.thresholdPrice!.toFixed(stablecoinDecimals),
+            stablecoinDecimals
         )
-    }
+        const unixExpiration = getExpirationTimestamp(
+            optionOrderParams.expiration
+        ).unixTimestamp
+        const strikes = optionOrderParams.strike.map(
+            (strike) => strike.toFixed(2)
+        )
+        const bigNumberStrike = strikes.map((strike) =>
+            ethers.utils.parseUnits(strike, stablecoinDecimals)
+        )
+        const formattedStrike = strikes.join("|")
+        const intQuantity = optionOrderParams.quantity! * quantityScaleFactor   
+            
+         // Hash and sign the option order parameters for on-chain verification
+        const hashedValues = ethers.utils.solidityKeccak256(
+            [
+                "bool",       // buyFlag - Boolean to indicate whether this is a buy (true) or sell (false).
+                "string",     // ticker - String to indicate a particular asset ("AVAX", "ETH", or "BTC").
+                "uint256",    // expiration - Date in Unix timestamp. Must be 8:00 AM UTC (e.g. 1643097600 for January 25th, 2022).
+                "uint256",    // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+                "uint256[2]", // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
+                "string",     // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
+                "uint256",    // contractType - 0 for call, 1 for put, 2 for call spread, and 3 for put spread.
+                "uint256",    // quantity - Integer number of contracts desired in the order. Has to be scaled by supported decimals (10**2).
+                "uint256"     // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+            ],
+            [
+                optionOrderParams.orderType === OrderType.LONG_OPEN ||  optionOrderParams.orderType == OrderType.SHORT_OPEN,
+                optionOrderParams.ticker,
+                unixExpiration,
+                optionOrderParams.expiration,
+                bigNumberStrike,
+                formattedStrike,
+                optionOrderParams.contractType,
+                intQuantity,
+                thresholdPrice
+            ]
+        )
+        // Note that we are signing a message, not a transaction
+        const signature = await wallet.signMessage(
+            ethers.utils.arrayify(hashedValues)
+        )
+        const value = optionOrderParams.thresholdPrice! * optionOrderParams.quantity!
+        let amountToApprove: ethers.BigNumber
+
+        if(optionOrderParams.orderType === OrderType.SHORT_OPEN) {
+            let diffPrice: number = 0
+            if (optionOrderParams.contractType == 1 || optionOrderParams.contractType == 0){
+                // put
+                diffPrice = Number(optionOrderParams.strike[0])
+            }
+            else if (optionOrderParams.contractType == 2){
+                // call spread
+                diffPrice = Math.abs(Number(optionOrderParams.strike[1]) - Number(optionOrderParams.strike[0]))
+            }
+            else if (optionOrderParams.contractType == 3){
+                // put spread
+                diffPrice = Math.abs(Number(optionOrderParams.strike[0]) - Number(optionOrderParams.strike[1]))
+            }
+            amountToApprove = ethers.utils.parseUnits(
+                (
+                    optionOrderParams.quantity! * diffPrice).toString(),
+                    stablecoinDecimals
+                )
+        } else {
+            amountToApprove = ethers.BigNumber.from
+            (
+                ethers.utils.parseUnits(value.toFixed(stablecoinDecimals), stablecoinDecimals)
+            )
+        }
    
-    return {
-        hashedValues,
-        signature,
-        amountToApprove,
-        ...optionOrderParams,
-        unixExpiration,
-        formattedStrike,
-        bigNumberStrike,
-        bigNumberThresholdPrice: thresholdPrice
-    }
+        return {
+            hashedValues,
+            signature,
+            amountToApprove,
+            ...optionOrderParams,
+            unixExpiration,
+            formattedStrike,
+            bigNumberStrike,
+            bigNumberThresholdPrice: thresholdPrice
+        }
+    }))
+    
+    return preparedParams
 }
