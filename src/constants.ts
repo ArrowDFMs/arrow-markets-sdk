@@ -40,8 +40,7 @@ export const DEFAULT_VERSION = Version.V4
 
 export const urls: any = {
     api: {
-        [Version.V4]: "http://localhost/v1",
-        // [Version.V4]: "https://fuji-v4-prime-api.arrow.markets/v1",
+        [Version.V4]: "https://fuji-v4-prime-api.arrow.markets/v1",
         [Version.COMPETITION]: "https://competition-v4-api.arrow.markets/v1"
     },
     provider: {
