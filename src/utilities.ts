@@ -177,21 +177,37 @@ export async function getRegistryContract(
  ****************************************/
 
 /**
- * Get the current price (in USD) of an underlying asset from CryptoWatch.
+ * Get the current price (in USD) of an underlying asset from Binance or CryptoWatch.
+ * If there is a specific timeout code in the return from Binance, try on CryptoWatch.
  * Throw custom error if there is some issue getting the spot price.
  * 
  * @param ticker Ticker of the underlying asset.
  * @returns Spot price of underlying asset specified by ticker.
  */
 export async function getUnderlierSpotPrice(ticker: Ticker) {
-    const cryptowatchResponse = await axios.get(
-        `https://api.cryptowat.ch/markets/binance/${binanceSymbols[ticker]}/price`
+    // Using Binance API to get latest price
+    const binanceResponse = await axios.get(
+        `https://api.binance.us/api/v3/ticker/price?symbol=${binanceSymbols[ticker]}`
     )
 
-    try {
-        return parseFloat(cryptowatchResponse["data"]["result"]["price"])
-    } catch {
-        throw Error("Could not retrieve underlying spot price from Cryptowatch.")
+    // If Binance tells us we have been making too many requests, use Cryptowatch
+    if ("code" in binanceResponse && binanceResponse["data"]["code"] == -1003) {
+        // Use CryptoWatch API to get latest price
+        const cryptowatchResponse = await axios.get(
+            `https://api.cryptowat.ch/markets/binance/${binanceSymbols[ticker]}/price`
+        )
+
+        try {
+            return parseFloat(cryptowatchResponse["data"]["result"]["price"])
+        } catch {
+            throw Error("Could not retrieve underlying spot price from Cryptowatch.")
+        }
+    } else {
+        try {
+            return parseFloat(binanceResponse["data"]["price"])
+        } catch {
+            throw Error("Could not retrieve underlying spot price from Binance.")
+        }
     }
 }
 
