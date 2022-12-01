@@ -187,7 +187,7 @@ export async function getRegistryContract(
 export async function getUnderlierSpotPrice(ticker: Ticker) {
     // Using Binance API to get latest price
     const binanceResponse = await axios.get(
-        `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbols[ticker]}`
+        `https://api.binance.us/api/v3/ticker/price?symbol=${binanceSymbols[ticker]}`
     )
 
     // If Binance tells us we have been making too many requests, use Cryptowatch
