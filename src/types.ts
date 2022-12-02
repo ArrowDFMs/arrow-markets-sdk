@@ -108,3 +108,10 @@ export interface GetUnderlierHistoricalPricesResponse {
     prices: number[][];
     total_volumes: number[][];
 }
+
+export interface GeoLocationData {
+  data: {
+        ip: string;
+        country: string;
+    }
+}
