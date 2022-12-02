@@ -16,6 +16,7 @@ dayjs.extend(customParseFormat)
 import {
     Currency,
     DeliverOptionParams,
+    GeoLocationData,
     GetUnderlierHistoricalPricesResponse,
     OptionOrderParams,
     OrderType,
@@ -186,8 +187,12 @@ export async function getRegistryContract(
  */
 export async function getUnderlierSpotPrice(ticker: Ticker) {
     // Using Binance API to get latest price
+    const location = await getGeoLocation();
+    
+    if(location.error) throw new Error('Unable to get location data');
+
     const binanceResponse = await axios.get(
-        `https://api.binance.us/api/v3/ticker/price?symbol=${binanceSymbols[ticker]}`
+        `https://api.binance.${location.country === 'US' ? 'us' : 'com'}/api/v3/ticker/price?symbol=${binanceSymbols[ticker]}`
     )
 
     // If Binance tells us we have been making too many requests, use Cryptowatch
@@ -556,3 +561,22 @@ export async function prepareDeliverOptionParams(
     
     return preparedParams
 }
+
+
+/**
+ * Determines the geo location of a requestor.
+ *
+ * @returns An object that contains the country of the requestor.
+ */
+const getGeoLocation = async () => {
+  const api = "https://api.country.is";
+
+  try {
+    const response = await axios.request<any, GeoLocationData>({url: api})
+
+    return { country: response.data.country, error: false };
+  } catch (error) {
+    return { country: undefined, error: true };
+  }
+   
+};
