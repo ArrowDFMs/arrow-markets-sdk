@@ -588,7 +588,6 @@ const getGeoLocation = async () => {
  * @returns The readable contract type.
  */
 export const getReadableContractType = (contractType: ContractType, orderType: OrderType) => {
-    console.log('getReadableContractType',contractType, orderType)
     switch (contractType) {
         case ContractType.CALL_SPREAD:
         case ContractType.PUT_SPREAD:
