@@ -19,6 +19,13 @@ export enum Ticker {
     BTC = "BTC"
 }
 
+export enum StrategyType {
+    SUPPORT = 0,
+    RESISTANCE = 1,
+    TARGET = 2,
+    BREAK_OUT_BREAK_DOWN = 3
+}
+
 export enum ContractType {
     CALL = 0,
     PUT = 1,
