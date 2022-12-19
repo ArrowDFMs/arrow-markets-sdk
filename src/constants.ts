@@ -40,8 +40,8 @@ export const DEFAULT_VERSION = Version.V4
 
 export const urls: any = {
     api: {
-        [Version.V4]: "https://fuji-v4-prime-api.arrow.markets/v1",
-        [Version.COMPETITION]: "https://competition-v4-api.arrow.markets/v1"
+        [Version.V4]: "https://fuji-v5-api.arrow.markets/v1",
+        [Version.COMPETITION]: "https://competition-v5-api.arrow.markets/v1"
     },
     provider: {
         fuji: "https://api.avax-test.network/ext/bc/C/rpc"
