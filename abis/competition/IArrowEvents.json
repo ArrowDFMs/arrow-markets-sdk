@@ -1,5 +1,123 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_routerAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "OptionChainFactoryAddressHasAlreadyBeenSet",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "chainFactoryAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotChainFactory",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "optionChainAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotCorrectOptionChain",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "insurancePoolAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotInsurancePool",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotOptionContract",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "registryAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotRegistry",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "routerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotRouter",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotShortAggregator",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -286,6 +404,140 @@
       }
     ],
     "name": "NewLiabilityDestruction",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "ownerAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "optionAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "string",
+        "name": "hashedTicker",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "ticker",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "expiration",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "readableExpiration",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "decimalStrike",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "contractType",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "quantity",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "optionPrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "NewShortPositionCreation",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "ownerAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "optionAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "string",
+        "name": "hashedTicker",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "ticker",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "expiration",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "readableExpiration",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "decimalStrike",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "contractType",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "quantity",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "optionPrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "NewShortPositionDestruction",
     "type": "event"
   },
   {
@@ -903,6 +1155,11 @@
             "internalType": "int256",
             "name": "delta",
             "type": "int256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "changedDeltaAmount",
+            "type": "uint256"
           }
         ],
         "internalType": "struct DeltaPositionAcquiredParams",
@@ -1064,6 +1321,136 @@
       }
     ],
     "name": "emitNewLiabilityDestruction",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "ownerAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "optionAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "ticker",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "readableExpiration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[2]",
+            "name": "strike",
+            "type": "uint256[2]"
+          },
+          {
+            "internalType": "string",
+            "name": "decimalStrike",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "contractType",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quantity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "optionPrice",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct NewLiabilityParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "emitNewShortOptionCreation",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "ownerAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "optionAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "ticker",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "readableExpiration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[2]",
+            "name": "strike",
+            "type": "uint256[2]"
+          },
+          {
+            "internalType": "string",
+            "name": "decimalStrike",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "contractType",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quantity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "optionPrice",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct NewLiabilityParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "emitNewShortOptionDestruction",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1477,134 +1864,37 @@
   {
     "inputs": [
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "ownerAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "shortOptionAggregatorAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "ticker",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quantity",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "underlierCollateralBalances",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "stablecoinCollateralBalances",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct ShortOptionParams",
-        "name": "params",
-        "type": "tuple"
+        "internalType": "address",
+        "name": "ownerAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "shortOptionAggregatorAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "ticker",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "quantity",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "underlierCollateralBalances",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "stablecoinCollateralBalances",
+        "type": "uint256"
       }
     ],
     "name": "emitShortOptionSettled",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "ownerAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "shortOptionAggregatorAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "ticker",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quantity",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "underlierCollateralBalances",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "stablecoinCollateralBalances",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct ShortOptionParams",
-        "name": "params",
-        "type": "tuple"
-      }
-    ],
-    "name": "emitShortPositionClosed",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "ownerAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "shortOptionAggregatorAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "ticker",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quantity",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "underlierCollateralBalances",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "stablecoinCollateralBalances",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct ShortOptionParams",
-        "name": "params",
-        "type": "tuple"
-      }
-    ],
-    "name": "emitShortPositionOpened",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
