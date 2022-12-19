@@ -2,6 +2,90 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "optionChainBeaconAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "shortingModuleBeaconAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "optionContractBeaconAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "CannotSellBackToZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "ticker",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "readableExpiration",
+        "type": "uint256"
+      }
+    ],
+    "name": "OptionChainDoesNotExist",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OptionParamsArraySizeError",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "routerManagerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotRouterManager",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ownerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotRouterOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ShortAggregatorDoesNotExist",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "components": [
           {
             "internalType": "bool",
@@ -154,9 +238,9 @@
             "type": "bytes"
           }
         ],
-        "internalType": "struct DeliverOptionParams",
+        "internalType": "struct DeliverOptionParams[]",
         "name": "params",
-        "type": "tuple"
+        "type": "tuple[]"
       }
     ],
     "name": "deliverOption",
@@ -165,101 +249,8 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "bool",
-            "name": "buyFlag",
-            "type": "bool"
-          },
-          {
-            "internalType": "string",
-            "name": "ticker",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "expiration",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "readableExpiration",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256[2]",
-            "name": "strike",
-            "type": "uint256[2]"
-          },
-          {
-            "internalType": "string",
-            "name": "decimalStrike",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "contractType",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quantity",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "thresholdPrice",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "optionPrice",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "senderAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "message",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "bytes",
-            "name": "signature",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct DeliverOptionParams[]",
-        "name": "params",
-        "type": "tuple[]"
-      }
-    ],
-    "name": "deliverOptions",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "getArrowTokenAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getCollateralManagerAddress",
     "outputs": [
       {
         "internalType": "address",
@@ -298,7 +289,46 @@
   },
   {
     "inputs": [],
-    "name": "getGasManagerAddress",
+    "name": "getGMXPositionManagerAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getGMXPositionRouterAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getGMXRouterAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getGMXVaultAddress",
     "outputs": [
       {
         "internalType": "address",
@@ -467,6 +497,32 @@
   },
   {
     "inputs": [],
+    "name": "getShortAggregatorFacet1FactoryAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getShortAggregatorFacet2FactoryAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getShortAggregatorFactoryAddress",
     "outputs": [
       {
@@ -507,6 +563,19 @@
   {
     "inputs": [],
     "name": "getSwapRouterAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getUserFundsManagerAddress",
     "outputs": [
       {
         "internalType": "address",
@@ -670,19 +739,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_collateralManagerAddress",
-        "type": "address"
-      }
-    ],
-    "name": "setCollateralManagerAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "_comptrollerAddress",
         "type": "address"
       }
@@ -709,11 +765,37 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_gasManagerAddress",
+        "name": "_gmxPositionManagerAddress",
         "type": "address"
       }
     ],
-    "name": "setGasManagerAddress",
+    "name": "setGMXPositionManagerAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_gmxRouterAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setGMXRouterAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_gmxVaultAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setGMXVaultAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -844,6 +926,32 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "_shortAggregatorFacet1FactoryAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setShortAggregatorFacet1FactoryAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_shortAggregatorFacet2FactoryAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setShortAggregatorFacet2FactoryAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_shortAggregatorFactoryAddress",
         "type": "address"
       }
@@ -875,6 +983,19 @@
       }
     ],
     "name": "setSwapRouterAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_userFundsManagerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setUserFundsManagerAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

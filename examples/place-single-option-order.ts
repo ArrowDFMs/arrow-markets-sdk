@@ -30,6 +30,7 @@ async function main() {
 
     // Get stablecoin contract from Arrow
     const stablecoin = await arrowsdk.getStablecoinContract(version, wallet)
+    const router = await arrowsdk.getRouterContract(version, wallet)
 
     // A constant indicating how many block confirmations
     // to wait after submitting transactions to the blockchain
@@ -69,7 +70,7 @@ async function main() {
     const deliverOptionParams: DeliverOptionParams[] = await arrowsdk.prepareDeliverOptionParams([optionOrderParams], version, wallet)
     
     // Get computed option chain address
-    const optionChainAddress = await arrowsdk.computeOptionChainAddress(option.ticker, option.expiration, version)
+    const userFundsManagerAddress = await router.getUserFundsManagerAddress()
 
     // Approval circuit if the order is a "buy" order
     if (deliverOptionParams[0].orderType === OrderType.LONG_OPEN) {
@@ -82,14 +83,14 @@ async function main() {
         }
 
         // Get the amount that the option chain proxy is currently approved to spend
-        let approvedAmount = await stablecoin.allowance(wallet.address, optionChainAddress)
+        let approvedAmount = await stablecoin.allowance(wallet.address, userFundsManagerAddress)
         // If the approved amount is less than the amount required to be approved, ask user to approve the proper amount
         if (approvedAmount.lt(deliverOptionParams[0].amountToApprove)) {
             // Wait for the approval to be confirmed on-chain
-            await (await stablecoin.approve(optionChainAddress, deliverOptionParams[0].amountToApprove)).wait(numBlockConfirmations)
+            await (await stablecoin.approve(userFundsManagerAddress, deliverOptionParams[0].amountToApprove)).wait(numBlockConfirmations)
 
             // Get the amount that the option chain proxy is approved to spend now
-            approvedAmount = await stablecoin.allowance(wallet.address, optionChainAddress)
+            approvedAmount = await stablecoin.allowance(wallet.address, userFundsManagerAddress)
             // If the newly approved amount is still less than the amount required to be approved, throw and error
             if (approvedAmount.lt(deliverOptionParams[0].amountToApprove)) {
                 throw new Error('Approval to option chain failed.')

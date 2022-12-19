@@ -16,6 +16,7 @@ import {
     OptionContract,
     OptionOrderParams,
     OrderType,
+    StrategyType,
     Ticker,
     Version
 } from "./types"
@@ -46,7 +47,8 @@ import {
     getUnderlierSpotPrice,
     getUnderlierSpotPriceAndMarketChart,
     isValidVersion,
-    prepareDeliverOptionParams
+    prepareDeliverOptionParams,
+    getReadableContractType
 } from "./utilities"
 
 
@@ -146,9 +148,10 @@ export async function estimateOptionPriceAndGreeks(
 }
 
 /**
- * Get a recommended option from our server given some option parameters and a price forecast.
+ * Get a recommended options from our server given some option parameters and a price forecast.
  *
  * @param ticker Ticker of the underlying asset.
+ * @param strategyType: The type of user strategy,
  * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
  * @param forecast Forecasted price of underlying asset.
  * @param spotPrice // Most up-to-date price of underlying asset.
@@ -157,8 +160,9 @@ export async function estimateOptionPriceAndGreeks(
  * @returns Option object with optional price and greeks parameters populated.
  */
 
-export async function getRecommendedOption(
+export async function getRecommendedStrategies(
   ticker: Ticker,
+  strategyType: StrategyType,
   readableExpiration: string,
   forecast: number,
   spotPrice: number | undefined = undefined,
@@ -175,27 +179,28 @@ export async function getRecommendedOption(
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
     try {
-        const recommendedOptionResponse = await axios.post(
+        const recommendedOptionResponse: any = await axios.post(
             urls.api[version] + "/get-recommended-option",
             {
                 ticker: ticker,
+                strategy_type: strategyType,
                 expiration: readableExpiration,
                 forecast: forecast,
                 spot_price: spotPrice,
                 price_history: priceHistory
             }
         )
-
-        const recommendedOption: OptionContract = {
-            ticker: ticker,
-            expiration: readableExpiration,
-            strike: recommendedOptionResponse.data.option.strike,
-            contractType: recommendedOptionResponse.data.option.contract_type,
-            price: recommendedOptionResponse.data.option.price,
-            greeks: recommendedOptionResponse.data.option.greeks
-        }
-
-        return recommendedOption
+        const recommendedOptions = recommendedOptionResponse.data.options.map((option: any) => {
+            return {
+                ticker: ticker,
+                expiration: readableExpiration,
+                strike: option.strike,
+                type: getReadableContractType(option.contract_type, option.order_type),
+                price: option.price,
+                greeks: option.greeks
+            }
+        })
+        return recommendedOptions
     } catch (error) {
         throw error
     }
@@ -410,7 +415,7 @@ const arrowsdk = {
     // API functions
     estimateOptionPrice,
     estimateOptionPriceAndGreeks,
-    getRecommendedOption,
+    getRecommendedStrategies,
     getStrikeGrid,
     submitLongOptionOrder,
     submitShortOptionOrder,

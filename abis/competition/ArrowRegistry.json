@@ -27,6 +27,22 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "expiration",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "startingEpochTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "InvalidExpirationForEpochNumberCalculation",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "InvalidMaxPositionSize",
     "type": "error"
@@ -107,6 +123,22 @@
       }
     ],
     "name": "SenderNotCorrectOptionChain",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "senderAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "optionChainDelegateAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SenderNotOptionChainDelegate",
     "type": "error"
   },
   {
@@ -261,6 +293,25 @@
     "type": "event"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_expiration",
+        "type": "uint256"
+      }
+    ],
+    "name": "calculateEpochNumber",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "epochDurationInUnix",
     "outputs": [
@@ -302,6 +353,25 @@
   {
     "inputs": [],
     "name": "getContractTypeLimit",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_epochNumber",
+        "type": "uint256"
+      }
+    ],
+    "name": "getEpochNumberToExpiringOptions",
     "outputs": [
       {
         "internalType": "uint256",
@@ -596,6 +666,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_ticker",
+        "type": "string"
+      }
+    ],
+    "name": "getShortOptionExpirations",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getSlippageRate",
     "outputs": [
@@ -868,6 +957,24 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "_epochNumber",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_settledAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "setEpochNumberToExpiringOptions",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "_feeRate",
         "type": "uint256"
       }
@@ -1024,6 +1131,24 @@
       }
     ],
     "name": "setShortAggregatorAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_ticker",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_readableExpiration",
+        "type": "uint256"
+      }
+    ],
+    "name": "setShortAggregatorData",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

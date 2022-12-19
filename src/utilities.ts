@@ -14,6 +14,7 @@ dayjs.extend(customParseFormat)
 
 // Types
 import {
+    ContractType,
     Currency,
     DeliverOptionParams,
     GeoLocationData,
@@ -580,3 +581,27 @@ const getGeoLocation = async () => {
   }
    
 };
+
+/**
+ * Given a contract type and order type, determines the readable contract type.
+ *
+ * @returns The readable contract type.
+ */
+export const getReadableContractType = (contractType: ContractType, orderType: OrderType) => {
+    switch (contractType) {
+        case ContractType.CALL_SPREAD:
+        case ContractType.PUT_SPREAD:
+            if([OrderType.LONG_OPEN, OrderType.LONG_CLOSE].includes(orderType)) {
+                return contractType === ContractType.CALL_SPREAD ? "Call Debit Spread" : "Put Debit Spread"
+            }
+            return contractType === ContractType.CALL_SPREAD ? "Call Credit Spread" : "Put Credit Spread"
+        case ContractType.CALL:
+        case ContractType.PUT:
+            if([OrderType.LONG_OPEN, OrderType.LONG_CLOSE].includes(orderType)) {
+                return contractType === ContractType.CALL ? "Long Call" : "Long Put"
+            }
+            return contractType === ContractType.CALL ? "Short Call" : "Short Put"
+    }
+   
+};
+
