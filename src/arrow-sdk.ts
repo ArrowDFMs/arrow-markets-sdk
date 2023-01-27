@@ -194,8 +194,10 @@ export async function getRecommendedStrategies(
         const firstRecommendedOption = recommendedOptionResponse.data.options.max_profit
         const secondRecommendedOption = recommendedOptionResponse.data.options.first_min_losses
         const thirdRecommendedOption = recommendedOptionResponse.data.options.second_min_losses
-
-        if (secondRecommendedOption === null) {
+            console.log('firstRecommendedOption', firstRecommendedOption)
+            console.log('secondRecommendedOption', secondRecommendedOption)
+            console.log('thirdRecommendedOption', thirdRecommendedOption)
+        if (secondRecommendedOption === undefined) {
             throw new Error('Unable to generate recommended option strategies. Please try again with different parameters')
         }
 
@@ -208,7 +210,7 @@ export async function getRecommendedStrategies(
             greeks: firstRecommendedOption.greeks
         }
 
-        if (secondRecommendedOption === null) {
+        if (secondRecommendedOption === undefined) {
             return [firstOption]
         }
 
@@ -233,7 +235,7 @@ export async function getRecommendedStrategies(
             'spread_greek': secondRecommendedOption['spread_greeks']
         }
 
-        if (thirdRecommendedOption === null) {
+        if (thirdRecommendedOption === undefined) {
             return [firstOption, secondOption]
         }
 
