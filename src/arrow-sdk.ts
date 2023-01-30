@@ -148,6 +148,43 @@ export async function estimateOptionPriceAndGreeks(
 }
 
 /**
+ * Given a set of option parameters, get an estimated gas price for the transaction.
+ *
+ * @param orderParameters Array of objects containing parameters that define an option on Arrow.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
+ * @returns JSON object that contains an estimate of the gas price and the amount of AVAX needed for the transaction.
+ */
+export async function estimateGasPrice (
+    orderParameters : DeliverOptionParams[],
+    version: Version
+): Promise<Record<string, number>> {
+    const params: any[] = [];
+    orderParameters.map(order => {
+        params.push(
+        {
+            'order_type': order.orderType,
+            'ticker': order.ticker,
+            'expiration': order.expiration,
+            'strike': order.formattedStrike,
+            'contract_type': order.contractType,
+            'quantity': order.quantity,
+            'threshold_price': order.bigNumberThresholdPrice.toString(),
+            'hashed_params': order.hashedValues,
+            'signature': order.signature
+        })
+    })
+    
+    const estimateGasPriceResponse: any = await axios.post(
+        urls.api[version] + "/estimate-gas",
+        {
+            "params" : params
+        }
+    )
+
+    return { estimated_gas: estimateGasPriceResponse.data.estimated_gas, avax_needed: estimateGasPriceResponse.data.avax_needed }
+}
+
+/**
  * Get a recommended options from our server given some option parameters and a price forecast.
  *
  * @param ticker Ticker of the underlying asset.
@@ -472,6 +509,7 @@ const arrowsdk = {
     // API functions
     estimateOptionPrice,
     estimateOptionPriceAndGreeks,
+    estimateGasPrice,
     getRecommendedStrategies,
     getStrikeGrid,
     submitLongOptionOrder,
