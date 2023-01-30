@@ -190,17 +190,74 @@ export async function getRecommendedStrategies(
                 price_history: priceHistory
             }
         )
-        const recommendedOptions = recommendedOptionResponse.data.options.map((option: any) => {
-            return {
+
+        const firstRecommendedOption = recommendedOptionResponse.data.options.max_profit
+        const secondRecommendedOption = recommendedOptionResponse.data.options.first_min_losses
+        const thirdRecommendedOption = recommendedOptionResponse.data.options.second_min_losses
+        if (secondRecommendedOption === undefined) {
+            throw new Error('Unable to generate recommended option strategies. Please try again with different parameters')
+        }
+
+        const firstOption = {
+            ticker: ticker,
+            expiration: readableExpiration,
+            strike: firstRecommendedOption.strike,
+            type: getReadableContractType(firstRecommendedOption.contract_type, firstRecommendedOption.order_type),
+            price: firstRecommendedOption.price,
+            greeks: firstRecommendedOption.greeks
+        }
+
+        if (secondRecommendedOption === undefined) {
+            return [firstOption]
+        }
+
+        const secondOption = {
+            'long_leg': {
                 ticker: ticker,
                 expiration: readableExpiration,
-                strike: option.strike,
-                type: getReadableContractType(option.contract_type, option.order_type),
-                price: option.price,
-                greeks: option.greeks
-            }
-        })
-        return recommendedOptions
+                strike: secondRecommendedOption.long_leg.strike,
+                type: getReadableContractType(secondRecommendedOption.long_leg.contract_type, secondRecommendedOption.long_leg.order_type),
+                price: secondRecommendedOption.long_leg.price,
+                greeks: secondRecommendedOption.long_leg.greeks
+            },
+            'short_leg': {
+                ticker: ticker,
+                expiration: readableExpiration,
+                strike: secondRecommendedOption.short_leg.strike,
+                type: getReadableContractType(secondRecommendedOption.short_leg.contract_type, secondRecommendedOption.short_leg.order_type),
+                price: secondRecommendedOption.short_leg.price,
+                greeks: secondRecommendedOption.short_leg.greeks
+            },
+            'spread_price': secondRecommendedOption['spread_price'],
+            'spread_greek': secondRecommendedOption['spread_greeks']
+        }
+
+        if (thirdRecommendedOption === undefined) {
+            return [firstOption, secondOption]
+        }
+
+        const thirdOption = {
+            'long_leg': {
+                ticker: ticker,
+                expiration: readableExpiration,
+                strike: thirdRecommendedOption.long_leg.strike,
+                type: getReadableContractType(thirdRecommendedOption.long_leg.contract_type, thirdRecommendedOption.long_leg.order_type),
+                price: thirdRecommendedOption.long_leg.price,
+                greeks: thirdRecommendedOption.long_leg.greeks
+            },
+            'short_leg': {
+                ticker: ticker,
+                expiration: readableExpiration,
+                strike: thirdRecommendedOption.short_leg.strike,
+                type: getReadableContractType(thirdRecommendedOption.short_leg.contract_type, thirdRecommendedOption.short_leg.order_type),
+                price: thirdRecommendedOption.short_leg.price,
+                greeks: thirdRecommendedOption.short_leg.greeks
+            },
+            'spread_price': thirdRecommendedOption['spread_price'],
+            'spread_greek': thirdRecommendedOption['spread_greeks']
+        }
+
+        return [firstOption, secondOption, thirdOption]
     } catch (error) {
         throw error
     }
