@@ -353,8 +353,9 @@ export async function submitLongOptionOrder(
         })
     })
 
+    const apiEndPoint = deliverOptionParams[0].orderType === OrderType.LONG_OPEN ? '/open-long-position' : '/close-long-position'
     const orderSubmissionResponse = await axios.post(
-        urls.api[version] + '/submit-order',
+        urls.api[version] + apiEndPoint,
         {
             'params': params!
         }
