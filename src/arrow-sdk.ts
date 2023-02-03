@@ -11,11 +11,13 @@ import {
     ContractType,
     Currency,
     DeliverOptionParams,
+    GetRecommendedStrategiesResponse,
     Greeks,
     Interval,
     OptionContract,
     OptionOrderParams,
     OrderType,
+    ProtectionType,
     StrategyType,
     Ticker,
     Version
@@ -157,7 +159,7 @@ export async function estimateOptionPriceAndGreeks(
  * @param spotPrice // Most up-to-date price of underlying asset.
  * @param priceHistory // Prices of underlying asset over some period of history.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
- * @returns Option object with optional price and greeks parameters populated.
+ * @returns An array of recommended options.
  */
 
 export async function getRecommendedStrategies(
@@ -165,6 +167,8 @@ export async function getRecommendedStrategies(
   strategyType: StrategyType,
   readableExpiration: string,
   forecast: number,
+  upperBound: number | undefined = undefined,
+  protectionType: ProtectionType | undefined = undefined,
   spotPrice: number | undefined = undefined,
   priceHistory: number[] | undefined = undefined,
   version = DEFAULT_VERSION
@@ -179,85 +183,35 @@ export async function getRecommendedStrategies(
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
     try {
-        const recommendedOptionResponse: any = await axios.post(
-            urls.api[version] + "/get-recommended-option",
-            {
-                ticker: ticker,
-                strategy_type: strategyType,
-                expiration: readableExpiration,
-                forecast: forecast,
-                spot_price: spotPrice,
-                price_history: priceHistory
-            }
-        )
-
-        const firstRecommendedOption = recommendedOptionResponse.data.options.max_profit
-        const secondRecommendedOption = recommendedOptionResponse.data.options.first_min_losses
-        const thirdRecommendedOption = recommendedOptionResponse.data.options.second_min_losses
-        if (firstRecommendedOption === undefined) {
-            throw new Error('Unable to generate recommended option strategies. Please try again with different parameters')
+        if(strategyType === StrategyType.PROTECT) {
+            const recommendedOptionResponse = await axios.post<GetRecommendedStrategiesResponse>(
+                urls.api[version] + "/get-recommended-option",
+                {
+                    ticker: ticker,
+                    strategy_type: strategyType,
+                    expiration: readableExpiration,
+                    lower_bound: forecast,
+                    upper_bound: upperBound,
+                    protection_type: protectionType, 
+                    spot_price: spotPrice,
+                    price_history: priceHistory
+                }
+            )
+            return recommendedOptionResponse.data.strategies
+        } else {
+            const recommendedOptionResponse = await axios.post<GetRecommendedStrategiesResponse>(
+                urls.api[version] + "/get-recommended-option",
+                {
+                    ticker: ticker,
+                    strategy_type: strategyType,
+                    expiration: readableExpiration,
+                    forecast: forecast,
+                    spot_price: spotPrice,
+                    price_history: priceHistory
+                }
+            )
+            return recommendedOptionResponse.data.strategies
         }
-
-        const firstOption = {
-            ticker: ticker,
-            expiration: readableExpiration,
-            strike: firstRecommendedOption.strike,
-            type: getReadableContractType(firstRecommendedOption.contract_type, firstRecommendedOption.order_type),
-            price: firstRecommendedOption.price,
-            greeks: firstRecommendedOption.greeks
-        }
-
-        if (secondRecommendedOption === undefined) {
-            return [firstOption]
-        }
-
-        const secondOption = {
-            'long_leg': {
-                ticker: ticker,
-                expiration: readableExpiration,
-                strike: secondRecommendedOption.long_leg.strike,
-                type: getReadableContractType(secondRecommendedOption.long_leg.contract_type, secondRecommendedOption.long_leg.order_type),
-                price: secondRecommendedOption.long_leg.price,
-                greeks: secondRecommendedOption.long_leg.greeks
-            },
-            'short_leg': {
-                ticker: ticker,
-                expiration: readableExpiration,
-                strike: secondRecommendedOption.short_leg.strike,
-                type: getReadableContractType(secondRecommendedOption.short_leg.contract_type, secondRecommendedOption.short_leg.order_type),
-                price: secondRecommendedOption.short_leg.price,
-                greeks: secondRecommendedOption.short_leg.greeks
-            },
-            'spread_price': secondRecommendedOption['spread_price'],
-            'spread_greek': secondRecommendedOption['spread_greeks']
-        }
-
-        if (thirdRecommendedOption === undefined) {
-            return [firstOption, secondOption]
-        }
-
-        const thirdOption = {
-            'long_leg': {
-                ticker: ticker,
-                expiration: readableExpiration,
-                strike: thirdRecommendedOption.long_leg.strike,
-                type: getReadableContractType(thirdRecommendedOption.long_leg.contract_type, thirdRecommendedOption.long_leg.order_type),
-                price: thirdRecommendedOption.long_leg.price,
-                greeks: thirdRecommendedOption.long_leg.greeks
-            },
-            'short_leg': {
-                ticker: ticker,
-                expiration: readableExpiration,
-                strike: thirdRecommendedOption.short_leg.strike,
-                type: getReadableContractType(thirdRecommendedOption.short_leg.contract_type, thirdRecommendedOption.short_leg.order_type),
-                price: thirdRecommendedOption.short_leg.price,
-                greeks: thirdRecommendedOption.short_leg.greeks
-            },
-            'spread_price': thirdRecommendedOption['spread_price'],
-            'spread_greek': thirdRecommendedOption['spread_greeks']
-        }
-
-        return [firstOption, secondOption, thirdOption]
     } catch (error) {
         throw error
     }
