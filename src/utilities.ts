@@ -16,7 +16,6 @@ dayjs.extend(customParseFormat)
 import {
     ContractType,
     Currency,
-    DeliverOptionParams,
     GeoLocationData,
     GetUnderlierHistoricalPricesResponse,
     OptionOrderParams,
