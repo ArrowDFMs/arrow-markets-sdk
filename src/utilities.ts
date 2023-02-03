@@ -474,8 +474,16 @@ export async function prepareDeliverOptionParams(
             await getStablecoinContract(version, wallet)
         ).decimals()
 
+        const registry = await getRegistryContract(version, wallet)
+        const orderFee = optionOrderParams.thresholdPrice! * (await registry.getFeeRate() / await registry.getFeeRateScaleFactor())
+        let priceWithFee = 0
+        if([OrderType.LONG_OPEN, OrderType.SHORT_CLOSE].includes(optionOrderParams.orderType)){
+            priceWithFee = optionOrderParams.thresholdPrice! + orderFee
+        } else {
+            priceWithFee = optionOrderParams.thresholdPrice! - orderFee
+        }
         const thresholdPrice = ethers.utils.parseUnits(
-            optionOrderParams.thresholdPrice!.toFixed(stablecoinDecimals),
+            (priceWithFee).toFixed(stablecoinDecimals),
             stablecoinDecimals
         )
         const unixExpiration = getExpirationTimestamp(
