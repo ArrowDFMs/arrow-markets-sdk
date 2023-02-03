@@ -615,12 +615,6 @@ export const getOrderFee = async (
 ) => {
     const registry = await getRegistryContract(version, wallet)
     const orderFee = optionPrice * (await registry.getFeeRate() / await registry.getFeeRateScaleFactor())
-    let priceWithFee = 0
-    if([OrderType.LONG_OPEN, OrderType.SHORT_CLOSE].includes(orderType)){
-        priceWithFee = optionPrice + orderFee
-    } else {
-        priceWithFee = optionPrice - orderFee
-    }
-    return priceWithFee
+    return orderFee
 }
 
