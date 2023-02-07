@@ -16,7 +16,6 @@ dayjs.extend(customParseFormat)
 import {
     ContractType,
     Currency,
-    DeliverOptionParams,
     GeoLocationData,
     GetUnderlierHistoricalPricesResponse,
     OptionOrderParams,
@@ -602,4 +601,20 @@ export const getReadableContractType = (contractType: ContractType, orderType: O
     }
    
 };
+
+/**
+ * Given option price, and order type, determines the order fee.
+ *
+ * @returns The order fee.
+ */
+export const getOrderFee = async (
+    optionPrice: number, 
+    orderType: OrderType, 
+    version: Version, 
+    wallet: ethers.Signer
+) => {
+    const registry = await getRegistryContract(version, wallet)
+    const orderFee = optionPrice * (await registry.getFeeRate() / await registry.getFeeRateScaleFactor())
+    return orderFee
+}
 
