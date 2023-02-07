@@ -156,8 +156,8 @@ export async function estimateOptionPriceAndGreeks(
  * @param strategyType: The type of user strategy,
  * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
  * @param forecast Forecasted price of underlying asset.
- * @param spotPrice // Most up-to-date price of underlying asset.
- * @param priceHistory // Prices of underlying asset over some period of history.
+ * @param spotPrice Most up-to-date price of underlying asset.
+ * @param priceHistory Prices of underlying asset over some period of history.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @returns An array of recommended options.
  */
@@ -167,6 +167,69 @@ export async function getRecommendedStrategies(
   strategyType: StrategyType,
   readableExpiration: string,
   forecast: number,
+  spotPrice: number | undefined = undefined,
+  priceHistory: number[] | undefined = undefined,
+  version = DEFAULT_VERSION
+) {
+    if (spotPrice === undefined) {
+        spotPrice = await getUnderlierSpotPrice(ticker)
+    }
+    if (priceHistory === undefined) {
+        priceHistory = (await getUnderlierMarketChart(ticker)).priceHistory.map(entry => entry.price)
+    }
+
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+
+    try {
+        const recommendedOptionResponse = await axios.post<GetRecommendedStrategiesResponse>(
+            urls.api[version] + "/get-recommended-option",
+            {
+                ticker: ticker,
+                strategy_type: strategyType,
+                expiration: readableExpiration,
+                forecast: forecast,
+                spot_price: spotPrice,
+                price_history: priceHistory
+            }
+        )
+        const parsedOptions = recommendedOptionResponse.data.strategies.map(optionSet => {
+            return optionSet.map(option => {
+                return {
+                    ticker: ticker,
+                    expiration: option.expiration,
+                    strike: option.strike,
+                    price: option.price,
+                    type: getReadableContractType(option.contract_type, option.order_type),
+                    orderType: option.order_type
+                }
+            })
+        })
+        return parsedOptions
+    } catch (error) {
+        throw error
+    }
+}
+
+/**
+ * Get a hedging strategy from our server given a lower price bound, an upper price bound, and a protection type.
+ *
+ * @param ticker Ticker of the underlying asset.
+ * @param strategyType: The type of user strategy,
+ * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
+ * @param lowerBound The lower price bound a user wants to protect against.
+ * @param upperBound The upper price bound a user wants to protect against.
+ * @param protectionType The type of protection a user wants to use (Full or Partial)
+ * @param spotPrice  Most up-to-date price of underlying asset.
+ * @param priceHistory Prices of underlying asset over some period of history.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
+ * @returns An array of recommended options.
+ */
+
+export async function getHedgingStrategy(
+  ticker: Ticker,
+  strategyType: StrategyType,
+  readableExpiration: string,
+  lowerBound: number,
   upperBound: number | undefined = undefined,
   protectionType: ProtectionType | undefined = undefined,
   spotPrice: number | undefined = undefined,
@@ -183,35 +246,32 @@ export async function getRecommendedStrategies(
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
     try {
-        if(strategyType === StrategyType.PROTECT) {
-            const recommendedOptionResponse = await axios.post<GetRecommendedStrategiesResponse>(
-                urls.api[version] + "/get-recommended-option",
-                {
+        const recommendedOptionResponse = await axios.post<GetRecommendedStrategiesResponse>(
+            urls.api[version] + "/get-recommended-option",
+            {
+                ticker: ticker,
+                strategy_type: strategyType,
+                expiration: readableExpiration,
+                lower_bound: lowerBound,
+                upper_bound: upperBound,
+                protection_type: protectionType, 
+                spot_price: spotPrice,
+                price_history: priceHistory
+            }
+        )
+         const parsedOptions = recommendedOptionResponse.data.strategies.map(optionSet => {
+            return optionSet.map(option => {
+                return {
                     ticker: ticker,
-                    strategy_type: strategyType,
-                    expiration: readableExpiration,
-                    lower_bound: forecast,
-                    upper_bound: upperBound,
-                    protection_type: protectionType, 
-                    spot_price: spotPrice,
-                    price_history: priceHistory
+                    expiration: option.expiration,
+                    strike: option.strike,
+                    price: option.price,
+                    type: getReadableContractType(option.contract_type, option.order_type),
+                    orderType: option.order_type
                 }
-            )
-            return recommendedOptionResponse.data.strategies
-        } else {
-            const recommendedOptionResponse = await axios.post<GetRecommendedStrategiesResponse>(
-                urls.api[version] + "/get-recommended-option",
-                {
-                    ticker: ticker,
-                    strategy_type: strategyType,
-                    expiration: readableExpiration,
-                    forecast: forecast,
-                    spot_price: spotPrice,
-                    price_history: priceHistory
-                }
-            )
-            return recommendedOptionResponse.data.strategies
-        }
+            })
+        })
+        return parsedOptions
     } catch (error) {
         throw error
     }
@@ -428,6 +488,7 @@ const arrowsdk = {
     estimateOptionPrice,
     estimateOptionPriceAndGreeks,
     getRecommendedStrategies,
+    getHedgingStrategy,
     getStrikeGrid,
     submitLongOptionOrder,
     submitShortOptionOrder,

@@ -130,16 +130,13 @@ export interface GeoLocationData {
 }
 
 export interface GetRecommendedStrategiesResponse { 
-    strategies: RecommendedStrategySet[]
-}
-
-export interface RecommendedStrategySet  {
-    option: StrategyLeg[]
+    strategies: StrategyLeg[][]
 }
 
 export interface StrategyLeg {
     strike: [number,number],
     price: number,
+    expiration: string,
     contract_type: ContractType,
     order_type: OrderType,
     greeks: Greeks
