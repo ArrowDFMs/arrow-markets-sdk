@@ -46,11 +46,11 @@ export enum Currency {
 }
 
 export enum TradingView {
-    ADVANCE = "advance",
-    TARGET = "target",
-    SUPPORT = "support",
-    HEDGE = "hedge",
-    PORTFOLIO = "portfolio"
+    ADVANCE = 0,
+    TARGET = 1,
+    SUPPORT = 2,
+    HEDGE = 3,
+    PORTFOLIO = 4
 }
 
 export enum Interval {
