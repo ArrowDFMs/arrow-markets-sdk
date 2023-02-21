@@ -46,7 +46,7 @@ export enum Currency {
 }
 
 export enum TradingView {
-    ADVANCE = 'advance',
+    ADVANCED = 'advanced',
     TARGET = 'target',
     SUPPORT = 'support',
     HEDGE = 'hedge',
