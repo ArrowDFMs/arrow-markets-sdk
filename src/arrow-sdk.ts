@@ -18,6 +18,7 @@ import {
     OrderType,
     StrategyType,
     Ticker,
+    TradingView,
     Version
 } from "./types"
 
@@ -363,11 +364,13 @@ export async function getStrikeGrid(
  * Submit multiple option orders to the API to compute the live price and submit a transaction to the blockchain.
  *
  * @param deliverOptionParams[] Array of objects containing parameters necessary to create an option order on Arrow.
+ * @param tradingView A string that indicates the trading view from which the order was submitted.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
 export async function submitLongOptionOrder(
     deliverOptionParams: DeliverOptionParams[],
+    tradingView: TradingView | undefined = undefined,
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
@@ -385,7 +388,8 @@ export async function submitLongOptionOrder(
             'quantity': order.quantity,
             'threshold_price': order.bigNumberThresholdPrice.toString(),
             'hashed_params': order.hashedValues,
-            'signature': order.signature
+            'signature': order.signature,
+            'view': tradingView
         })
     })
 
@@ -405,11 +409,13 @@ export async function submitLongOptionOrder(
  * Submit a short option order to the API to compute the live price and submit a transaction to the blockchain.
  *
  * @param deliverOptionParams Object containing parameters necessary to create an option order on Arrow.
+ * @param tradingView A string that indicates the trading view from which the order was submitted.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
 export async function submitShortOptionOrder(
     deliverOptionParams: DeliverOptionParams[],
+    tradingView: TradingView | undefined = undefined,
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
@@ -427,7 +433,8 @@ export async function submitShortOptionOrder(
             'quantity': order.quantity,
             'threshold_price': order.bigNumberThresholdPrice.toString(),
             'hashed_params': order.hashedValues,
-            'signature': order.signature
+            'signature': order.signature,
+            'view': tradingView
         })
     })
 

@@ -45,6 +45,14 @@ export enum Currency {
     EUR = "eur"
 }
 
+export enum TradingView {
+    ADVANCED = 'advanced',
+    TARGET = 'target',
+    SUPPORT = 'support',
+    HEDGE = 'hedge',
+    PORTFOLIO = 'portfolio'
+}
+
 export enum Interval {
     DAILY = "daily"
 }
