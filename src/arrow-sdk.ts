@@ -231,7 +231,7 @@ export async function getRecommendedStrategies(
         const firstRecommendedOption = recommendedOptionResponse.data.options.max_profit
         const secondRecommendedOption = recommendedOptionResponse.data.options.first_min_losses
         const thirdRecommendedOption = recommendedOptionResponse.data.options.second_min_losses
-        if (secondRecommendedOption === undefined) {
+        if (firstRecommendedOption === undefined) {
             throw new Error('Unable to generate recommended option strategies. Please try again with different parameters')
         }
 
@@ -378,7 +378,6 @@ export async function submitLongOptionOrder(
     deliverOptionParams.map(order => {
         params.push(
         {
-            'order_type': order.orderType,
             'ticker': order.ticker,
             'expiration': order.expiration,
             'strike': order.formattedStrike,
@@ -390,8 +389,9 @@ export async function submitLongOptionOrder(
         })
     })
 
+    const apiEndPoint = deliverOptionParams[0].orderType === OrderType.LONG_OPEN ? '/open-long-position' : '/close-long-position'
     const orderSubmissionResponse = await axios.post(
-        urls.api[version] + '/submit-order',
+        urls.api[version] + apiEndPoint,
         {
             'params': params!
         }
@@ -409,32 +409,33 @@ export async function submitLongOptionOrder(
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
 export async function submitShortOptionOrder(
-    deliverOptionParams: DeliverOptionParams,
+    deliverOptionParams: DeliverOptionParams[],
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
-    if(
-        deliverOptionParams.orderType === OrderType.SHORT_CLOSE && 
-        deliverOptionParams.payPremium === undefined
-    ) {
-        throw new Error('Must provide all of the order parameters')
-    }
-  
-    const orderEndpoint = deliverOptionParams.orderType === 2 ? "/open-short-position" : "/close-short-position"
+    // Submit multiple option orders through API
+    let params: any[] = []
+
+    deliverOptionParams.map(order => {
+        params.push(
+        {
+            'ticker': order.ticker,
+            'expiration': order.expiration,
+            'strike': order.formattedStrike,
+            'contract_type': order.contractType,
+            'quantity': order.quantity,
+            'threshold_price': order.bigNumberThresholdPrice.toString(),
+            'hashed_params': order.hashedValues,
+            'signature': order.signature
+        })
+    })
+
+    const orderEndpoint = deliverOptionParams[0].orderType === 2 ? "/open-short-position" : "/close-short-position"
     const orderSubmissionResponse = await axios.post(
         urls.api[version] + orderEndpoint,
         {   
-            pay_premium: deliverOptionParams.payPremium,
-            order_type: deliverOptionParams.orderType,
-            ticker: deliverOptionParams.ticker,
-            expiration: deliverOptionParams.expiration,
-            strike: deliverOptionParams.formattedStrike,
-            contract_type: deliverOptionParams.contractType,
-            quantity: deliverOptionParams.quantity,
-            threshold_price: deliverOptionParams.bigNumberThresholdPrice.toString(),
-            hashed_params: deliverOptionParams.hashedValues,
-            signature: deliverOptionParams.signature
+            'params': params
         }
     )
 

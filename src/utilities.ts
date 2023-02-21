@@ -16,7 +16,6 @@ dayjs.extend(customParseFormat)
 import {
     ContractType,
     Currency,
-    DeliverOptionParams,
     GeoLocationData,
     GetUnderlierHistoricalPricesResponse,
     OptionOrderParams,
@@ -493,7 +492,6 @@ export async function prepareDeliverOptionParams(
          // Hash and sign the option order parameters for on-chain verification
         const hashedValues = ethers.utils.solidityKeccak256(
             [
-                "bool",       // buyFlag - Boolean to indicate whether this is a buy (true) or sell (false).
                 "string",     // ticker - String to indicate a particular asset ("AVAX", "ETH", or "BTC").
                 "uint256",    // expiration - Date in Unix timestamp. Must be 8:00 AM UTC (e.g. 1643097600 for January 25th, 2022).
                 "uint256",    // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
@@ -504,7 +502,6 @@ export async function prepareDeliverOptionParams(
                 "uint256"     // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
             ],
             [
-                optionOrderParams.orderType === OrderType.LONG_OPEN ||  optionOrderParams.orderType == OrderType.SHORT_OPEN,
                 optionOrderParams.ticker,
                 unixExpiration,
                 optionOrderParams.expiration,
@@ -604,4 +601,20 @@ export const getReadableContractType = (contractType: ContractType, orderType: O
     }
    
 };
+
+/**
+ * Given option price, and order type, determines the order fee.
+ *
+ * @returns The order fee.
+ */
+export const getOrderFee = async (
+    optionPrice: number, 
+    orderType: OrderType, 
+    version: Version, 
+    wallet: ethers.Signer
+) => {
+    const registry = await getRegistryContract(version, wallet)
+    const orderFee = optionPrice * (await registry.getFeeRate() / await registry.getFeeRateScaleFactor())
+    return orderFee
+}
 
