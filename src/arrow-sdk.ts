@@ -20,6 +20,7 @@ import {
     ProtectionType,
     StrategyType,
     Ticker,
+    TradingView,
     Version
 } from "./types"
 
@@ -147,6 +148,43 @@ export async function estimateOptionPriceAndGreeks(
     const greeks: Greeks = estimatedOptionPriceResponse.data.greeks
 
     return { estimatedOptionPrice, greeks }
+}
+
+/**
+ * Given a set of option parameters, get an estimated gas price for the transaction.
+ *
+ * @param orderParameters Array of objects containing parameters that define an option on Arrow.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
+ * @returns JSON object that contains an estimate of the gas price and the amount of AVAX needed for the transaction.
+ */
+export async function estimateGasPrice (
+    orderParameters : DeliverOptionParams[],
+    version: Version
+): Promise<Record<string, number>> {
+    const params: any[] = [];
+    orderParameters.map(order => {
+        params.push(
+        {
+            'order_type': order.orderType,
+            'ticker': order.ticker,
+            'expiration': order.expiration,
+            'strike': order.formattedStrike,
+            'contract_type': order.contractType,
+            'quantity': order.quantity,
+            'threshold_price': order.bigNumberThresholdPrice.toString(),
+            'hashed_params': order.hashedValues,
+            'signature': order.signature
+        })
+    })
+    
+    const estimateGasPriceResponse: any = await axios.post(
+        urls.api[version] + "/estimate-gas",
+        {
+            "params" : params
+        }
+    )
+
+    return { estimated_gas: estimateGasPriceResponse.data.estimated_gas, avax_needed: estimateGasPriceResponse.data.avax_needed }
 }
 
 /**
@@ -340,11 +378,13 @@ export async function getStrikeGrid(
  * Submit multiple option orders to the API to compute the live price and submit a transaction to the blockchain.
  *
  * @param deliverOptionParams[] Array of objects containing parameters necessary to create an option order on Arrow.
+ * @param tradingView A string that indicates the trading view from which the order was submitted.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
 export async function submitLongOptionOrder(
     deliverOptionParams: DeliverOptionParams[],
+    tradingView: TradingView | undefined = undefined,
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
@@ -362,7 +402,8 @@ export async function submitLongOptionOrder(
             'quantity': order.quantity,
             'threshold_price': order.bigNumberThresholdPrice.toString(),
             'hashed_params': order.hashedValues,
-            'signature': order.signature
+            'signature': order.signature,
+            'view': tradingView
         })
     })
 
@@ -382,11 +423,13 @@ export async function submitLongOptionOrder(
  * Submit a short option order to the API to compute the live price and submit a transaction to the blockchain.
  *
  * @param deliverOptionParams Object containing parameters necessary to create an option order on Arrow.
+ * @param tradingView A string that indicates the trading view from which the order was submitted.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
  * @returns Data object from API response that includes transaction hash and per-option execution price of the option transaction.
  */
 export async function submitShortOptionOrder(
     deliverOptionParams: DeliverOptionParams[],
+    tradingView: TradingView | undefined = undefined,
     version = DEFAULT_VERSION
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
@@ -404,7 +447,8 @@ export async function submitShortOptionOrder(
             'quantity': order.quantity,
             'threshold_price': order.bigNumberThresholdPrice.toString(),
             'hashed_params': order.hashedValues,
-            'signature': order.signature
+            'signature': order.signature,
+            'view': tradingView
         })
     })
 
@@ -487,6 +531,7 @@ const arrowsdk = {
     // API functions
     estimateOptionPrice,
     estimateOptionPriceAndGreeks,
+    estimateGasPrice,
     getRecommendedStrategies,
     getHedgingStrategy,
     getStrikeGrid,
