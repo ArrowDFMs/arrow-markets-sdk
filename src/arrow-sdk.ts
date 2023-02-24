@@ -11,11 +11,13 @@ import {
     ContractType,
     Currency,
     DeliverOptionParams,
+    GetRecommendedStrategiesResponse,
     Greeks,
     Interval,
     OptionContract,
     OptionOrderParams,
     OrderType,
+    ProtectionType,
     StrategyType,
     Ticker,
     TradingView,
@@ -192,10 +194,10 @@ export async function estimateGasPrice (
  * @param strategyType: The type of user strategy,
  * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
  * @param forecast Forecasted price of underlying asset.
- * @param spotPrice // Most up-to-date price of underlying asset.
- * @param priceHistory // Prices of underlying asset over some period of history.
+ * @param spotPrice Most up-to-date price of underlying asset.
+ * @param priceHistory Prices of underlying asset over some period of history.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
- * @returns Option object with optional price and greeks parameters populated.
+ * @returns An array of recommended options.
  */
 
 export async function getRecommendedStrategies(
@@ -217,7 +219,7 @@ export async function getRecommendedStrategies(
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
     try {
-        const recommendedOptionResponse: any = await axios.post(
+        const recommendedOptionResponse = await axios.post<GetRecommendedStrategiesResponse>(
             urls.api[version] + "/get-recommended-option",
             {
                 ticker: ticker,
@@ -228,74 +230,86 @@ export async function getRecommendedStrategies(
                 price_history: priceHistory
             }
         )
+        const parsedOptions = recommendedOptionResponse.data.strategies.map(optionSet => {
+            return optionSet.map(option => {
+                return {
+                    ticker: ticker,
+                    expiration: option.expiration,
+                    strike: option.strike,
+                    price: option.price,
+                    type: getReadableContractType(option.contract_type, option.order_type),
+                    orderType: option.order_type
+                }
+            })
+        })
+        return parsedOptions
+    } catch (error) {
+        throw error
+    }
+}
 
-        const firstRecommendedOption = recommendedOptionResponse.data.options.max_profit
-        const secondRecommendedOption = recommendedOptionResponse.data.options.first_min_losses
-        const thirdRecommendedOption = recommendedOptionResponse.data.options.second_min_losses
-        if (firstRecommendedOption === undefined) {
-            throw new Error('Unable to generate recommended option strategies. Please try again with different parameters')
-        }
+/**
+ * Get a hedging strategy from our server given a lower price bound, an upper price bound, and a protection type.
+ *
+ * @param ticker Ticker of the underlying asset.
+ * @param strategyType: The type of user strategy,
+ * @param readableExpiration Readable timestamp in the "MMDDYYYY" format.
+ * @param lowerBound The lower price bound a user wants to protect against.
+ * @param upperBound The upper price bound a user wants to protect against.
+ * @param protectionType The type of protection a user wants to use (Full or Partial)
+ * @param spotPrice  Most up-to-date price of underlying asset.
+ * @param priceHistory Prices of underlying asset over some period of history.
+ * @param version Version of Arrow contract suite with which to interact. Default is V4.
+ * @returns An array of recommended options.
+ */
 
-        const firstOption = {
-            ticker: ticker,
-            expiration: readableExpiration,
-            strike: firstRecommendedOption.strike,
-            type: getReadableContractType(firstRecommendedOption.contract_type, firstRecommendedOption.order_type),
-            price: firstRecommendedOption.price,
-            greeks: firstRecommendedOption.greeks
-        }
+export async function getHedgingStrategy(
+  ticker: Ticker,
+  strategyType: StrategyType,
+  readableExpiration: string,
+  lowerBound: number,
+  upperBound: number | undefined = undefined,
+  protectionType: ProtectionType | undefined = undefined,
+  spotPrice: number | undefined = undefined,
+  priceHistory: number[] | undefined = undefined,
+  version = DEFAULT_VERSION
+) {
+    if (spotPrice === undefined) {
+        spotPrice = await getUnderlierSpotPrice(ticker)
+    }
+    if (priceHistory === undefined) {
+        priceHistory = (await getUnderlierMarketChart(ticker)).priceHistory.map(entry => entry.price)
+    }
 
-        if (secondRecommendedOption === undefined) {
-            return [firstOption]
-        }
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
-        const secondOption = {
-            'long_leg': {
+    try {
+        const recommendedOptionResponse = await axios.post<GetRecommendedStrategiesResponse>(
+            urls.api[version] + "/get-recommended-option",
+            {
                 ticker: ticker,
+                strategy_type: strategyType,
                 expiration: readableExpiration,
-                strike: secondRecommendedOption.long_leg.strike,
-                type: getReadableContractType(secondRecommendedOption.long_leg.contract_type, secondRecommendedOption.long_leg.order_type),
-                price: secondRecommendedOption.long_leg.price,
-                greeks: secondRecommendedOption.long_leg.greeks
-            },
-            'short_leg': {
-                ticker: ticker,
-                expiration: readableExpiration,
-                strike: secondRecommendedOption.short_leg.strike,
-                type: getReadableContractType(secondRecommendedOption.short_leg.contract_type, secondRecommendedOption.short_leg.order_type),
-                price: secondRecommendedOption.short_leg.price,
-                greeks: secondRecommendedOption.short_leg.greeks
-            },
-            'spread_price': secondRecommendedOption['spread_price'],
-            'spread_greek': secondRecommendedOption['spread_greeks']
-        }
-
-        if (thirdRecommendedOption === undefined) {
-            return [firstOption, secondOption]
-        }
-
-        const thirdOption = {
-            'long_leg': {
-                ticker: ticker,
-                expiration: readableExpiration,
-                strike: thirdRecommendedOption.long_leg.strike,
-                type: getReadableContractType(thirdRecommendedOption.long_leg.contract_type, thirdRecommendedOption.long_leg.order_type),
-                price: thirdRecommendedOption.long_leg.price,
-                greeks: thirdRecommendedOption.long_leg.greeks
-            },
-            'short_leg': {
-                ticker: ticker,
-                expiration: readableExpiration,
-                strike: thirdRecommendedOption.short_leg.strike,
-                type: getReadableContractType(thirdRecommendedOption.short_leg.contract_type, thirdRecommendedOption.short_leg.order_type),
-                price: thirdRecommendedOption.short_leg.price,
-                greeks: thirdRecommendedOption.short_leg.greeks
-            },
-            'spread_price': thirdRecommendedOption['spread_price'],
-            'spread_greek': thirdRecommendedOption['spread_greeks']
-        }
-
-        return [firstOption, secondOption, thirdOption]
+                lower_bound: lowerBound,
+                upper_bound: upperBound,
+                protection_type: protectionType, 
+                spot_price: spotPrice,
+                price_history: priceHistory
+            }
+        )
+         const parsedOptions = recommendedOptionResponse.data.strategies.map(optionSet => {
+            return optionSet.map(option => {
+                return {
+                    ticker: ticker,
+                    expiration: option.expiration,
+                    strike: option.strike,
+                    price: option.price,
+                    type: getReadableContractType(option.contract_type, option.order_type),
+                    orderType: option.order_type
+                }
+            })
+        })
+        return parsedOptions
     } catch (error) {
         throw error
     }
@@ -519,6 +533,7 @@ const arrowsdk = {
     estimateOptionPriceAndGreeks,
     estimateGasPrice,
     getRecommendedStrategies,
+    getHedgingStrategy,
     getStrikeGrid,
     submitLongOptionOrder,
     submitShortOptionOrder,

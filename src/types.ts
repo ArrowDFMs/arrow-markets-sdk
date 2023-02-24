@@ -23,7 +23,13 @@ export enum StrategyType {
     SUPPORT = 0,
     RESISTANCE = 1,
     TARGET = 2,
-    BREAK_OUT_BREAK_DOWN = 3
+    BREAK_OUT_BREAK_DOWN = 3,
+    PROTECT = 4
+}
+
+export enum ProtectionType {
+    FULL = 0,
+    PARTIAL = 1
 }
 
 export enum ContractType {
@@ -129,4 +135,17 @@ export interface GeoLocationData {
         ip: string;
         country: string;
     }
+}
+
+export interface GetRecommendedStrategiesResponse { 
+    strategies: StrategyLeg[][]
+}
+
+export interface StrategyLeg {
+    strike: [number,number],
+    price: number,
+    expiration: string,
+    contract_type: ContractType,
+    order_type: OrderType,
+    greeks: Greeks
 }
