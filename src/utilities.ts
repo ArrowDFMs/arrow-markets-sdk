@@ -26,7 +26,6 @@ import {
 
 // Constants
 import {
-    addresses,
     binanceSymbols,
     bytecodeHashes,
     coingeckoIDs,
@@ -35,7 +34,8 @@ import {
     quantityScaleFactor,
     secondsPerDay,
     UNSUPPORTED_EXPIRATION_ERROR,
-    UNSUPPORTED_VERSION_ERROR
+    UNSUPPORTED_VERSION_ERROR,
+    urls
 } from "./constants"
 
 // ABIs
@@ -58,7 +58,7 @@ import {
  * @param wallet Wallet with which you want to connect the instance of the router contract. Default is Fuji provider.
  * @returns Local instance of ethers.Contract for the Arrow router contract.
  */
-export function getRouterContract(
+export async function getRouterContract(
     version = DEFAULT_VERSION,
     wallet:
         | ethers.providers.Provider
@@ -66,9 +66,12 @@ export function getRouterContract(
         | ethers.Signer = providers.fuji
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
-
+    
+    if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
+    
+    const routerAddressResponse = await axios.get(urls.api[version] + '/get-router-address')
     const router = new ethers.Contract(
-        addresses.fuji.router[version],
+        routerAddressResponse.data.router_address,
         IArrowRouter[version],
         wallet
     )
@@ -91,8 +94,9 @@ export async function getStablecoinContract(
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
+    const router = await getRouterContract(version, wallet)
     const stablecoin = new ethers.Contract(
-        await getRouterContract(version, wallet).getStablecoinAddress(),
+        router.getStablecoinAddress(),
         IERC20Metadata,
         wallet
     )
@@ -141,8 +145,9 @@ export async function getEventsContract(
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
+    const router = await getRouterContract(version, wallet)
     const events = new ethers.Contract(
-        await getRouterContract(version, wallet).getEventsAddress(),
+        router.getEventsAddress(),
         IArrowEvents[version],
         wallet
     )
@@ -165,8 +170,9 @@ export async function getRegistryContract(
 ) {
     if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
+    const router = await getRouterContract(version, wallet)
     const registry = new ethers.Contract(
-        await getRouterContract(version, wallet).getRegistryAddress(),
+        router.getRegistryAddress(),
         IArrowRegistry[version],
         wallet
     )
@@ -385,26 +391,8 @@ export async function computeOptionChainAddress(
         | ethers.Signer = providers.fuji
 ): Promise<string> {
     // Get local instance of router contract
-    const router = getRouterContract(version, wallet)
-
-    const optionChainFactoryAddress = await router.getOptionChainFactoryAddress()
-
-    // Build salt for CREATE2
-
-    const salt = ethers.utils.solidityKeccak256(
-        ["address", "string", "uint256"],
-        [optionChainFactoryAddress, ticker, readableExpiration]
-    )
-
-    // Compute option chain proxy address using CREATE2
-
-    const optionChainAddress = ethers.utils.getCreate2Address(
-        optionChainFactoryAddress,
-        salt,
-        bytecodeHashes.ArrowOptionChainProxy[version]
-    )
-
-    return optionChainAddress
+    const registry = await getRegistryContract(version, wallet)
+    return await registry.getOptionChainAddress(ticker, readableExpiration)
 }
 
 /**
@@ -423,27 +411,8 @@ export async function computeShortAggregatorAddress(
         | ethers.Wallet
         | ethers.Signer = providers.fuji
 ): Promise<string> {
-    // Get local instance of router contract
-    const router = getRouterContract(version, wallet)
-    
-    const shortAggregatorFactoryAddress = await router.getShortAggregatorFactoryAddress()
-   
-    // Build salt for 
-    
-    const salt = ethers.utils.solidityKeccak256(
-        ["address", "string"],
-        [shortAggregatorFactoryAddress, ticker]
-    )
-
-    // Compute option chain proxy address using 
-    
-    const shortAggregatorAddress = ethers.utils.getCreate2Address(
-        shortAggregatorFactoryAddress,
-        salt,
-        bytecodeHashes.ArrowOptionChainProxy[version]
-    )
-
-    return shortAggregatorAddress
+    const registry = await getRegistryContract(version, wallet)
+   return await registry.getShortAggregatorAddress(ticker)
 }
 
 /**

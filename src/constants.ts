@@ -52,19 +52,6 @@ export const providers: any = {
     fuji: new ethers.providers.JsonRpcProvider(urls.provider.fuji)
 }
 
-export const addresses: any = {
-    fuji: {
-        router: {
-             [Version.V4]: ethers.utils.getAddress(
-                "0xaB12c83893ba35f2e4CEeA65429c5805CC86D4bD"
-            ),
-            [Version.COMPETITION]: ethers.utils.getAddress(
-                "0xD05D064DBDCf8dB7D87EcD7E06c63874Bb968AA6"
-            )
-        }
-    }
-}
-
 export const bytecodeHashes: any = {
     ArrowOptionChainProxy: {
         [Version.V4]: ethers.utils.solidityKeccak256(
