@@ -411,7 +411,7 @@ export async function computeShortAggregatorAddress(
         | ethers.Signer = providers.fuji
 ): Promise<string> {
     const registry = await getRegistryContract(version, wallet)
-   return await registry.getShortAggregatorAddress(ticker)
+    return await registry.getShortAggregatorAddress(ticker)
 }
 
 /**
