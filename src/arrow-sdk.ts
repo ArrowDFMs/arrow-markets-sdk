@@ -26,7 +26,6 @@ import {
 
 // Constants
 import {
-    addresses,
     DEFAULT_VERSION,
     providers,
     UNSUPPORTED_VERSION_ERROR,
@@ -484,7 +483,7 @@ export async function settleOptions(
   wallet: ethers.Wallet | ethers.Signer,
   version = DEFAULT_VERSION
 ) {
-    const router = getRouterContract(version, wallet)
+    const router = await getRouterContract(version, wallet)
 
     try {
         await router.callStatic.settleOptions(
@@ -508,7 +507,6 @@ const arrowsdk = {
     // Variables
     urls,
     providers,
-    addresses,
 
     // Enums
     ContractType,
