@@ -51,16 +51,3 @@ export const urls: any = {
 export const providers: any = {
     fuji: new ethers.providers.JsonRpcProvider(urls.provider.fuji)
 }
-
-export const bytecodeHashes: any = {
-    ArrowOptionChainProxy: {
-        [Version.V4]: ethers.utils.solidityKeccak256(
-            ["bytes"],
-            [ArrowOptionChainProxy.v4.bytecode]
-        ),
-        [Version.COMPETITION]: ethers.utils.solidityKeccak256(
-            ["bytes"],
-            [ArrowOptionChainProxy.competition.bytecode]
-        )
-    }
-}
