@@ -27,7 +27,6 @@ import {
 // Constants
 import {
     binanceSymbols,
-    bytecodeHashes,
     coingeckoIDs,
     DEFAULT_VERSION,
     providers,
@@ -373,7 +372,7 @@ export function isFriday(unixTimestamp: number): boolean {
 }
 
 /**
- * Compute address of on-chain option chain contract using CREATE2 functionality.
+ * Get the option chain address for a given ticker and expiration.
  *
  * @param ticker Ticker of the underlying asset.
  * @param readableExpiration Readable expiration in the "MMDDYYYY" format.
@@ -396,7 +395,7 @@ export async function computeOptionChainAddress(
 }
 
 /**
- * Compute address of on-chain short aggregator contract using CREATE2 functionality.
+ * Get the short aggregator address for a given ticker.
  *
  * @param ticker Ticker of the underlying asset.
  * @param version Version of Arrow contract suite with which to interact. Default is V4.
