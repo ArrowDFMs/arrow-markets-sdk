@@ -20,7 +20,7 @@ export enum ContractType {
   PUT = 1
 }
 
-export enum OptionStrategyType {
+export enum PositionStrategy {
   CALL = 0,
   PUT = 1,
   CALL_SPREAD = 2,
@@ -59,7 +59,7 @@ export interface PositionInterface {
   symbol?: string
   ticker: Ticker
   optionLegs: Option[]
-  strategyType: OptionStrategyType
+  strategyType: PositionStrategy
   orderType: OrderType
   ratio: number
   price?: number
@@ -71,7 +71,7 @@ export interface PositionInterface {
   greeks?: Greeks
 }
 
-export type StrategyTypeString =
+export type PositionStrategyType =
   | 'Long Call'
   | 'Short Call'
   | 'Long Put'
@@ -93,12 +93,12 @@ class Position implements PositionInterface {
   optionLegs: Option[]
   ratio: number
   orderType: OrderType
-  strategyType: OptionStrategyType
+  strategyType: PositionStrategy
 
   constructor(
     ticker: Ticker,
     optionLegs: Option[],
-    strategyType: OptionStrategyType,
+    strategyType: PositionStrategy,
     ratio: number,
     orderType: OrderType
   ) {

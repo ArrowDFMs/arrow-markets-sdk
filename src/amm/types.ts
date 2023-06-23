@@ -21,7 +21,7 @@ export enum Version {
   COMPETITION = 'competition'
 }
 
-export enum StrategyType {
+export enum RecommendationStrategy {
   SUPPORT = 0,
   RESISTANCE = 1,
   TARGET = 2,

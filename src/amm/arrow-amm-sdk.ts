@@ -15,7 +15,7 @@ import {
   OptionOrderParams,
   OrderType,
   ProtectionType,
-  StrategyType,
+  RecommendationStrategy,
   StrikeGridOption,
   TradingView,
   Version
@@ -46,11 +46,7 @@ import {
   getUnderlierMarketChart,
   getUnderlierSpotPrice
 } from '../common/utils/pricing'
-import {
-  ContractType,
-  OptionStrategyType,
-  Ticker
-} from '../common/types/option'
+import { ContractType, PositionStrategy, Ticker } from '../common/types/option'
 
 /***************************************
  *           ARROW API CALLS           *
@@ -110,7 +106,7 @@ export async function estimateGasPrice(
 
 export async function getRecommendedStrategies(
   ticker: Ticker,
-  strategyType: StrategyType,
+  strategyType: RecommendationStrategy,
   readableExpiration: string,
   forecast: number,
   spotPrice: number | undefined = undefined,
@@ -147,7 +143,7 @@ export async function getRecommendedStrategies(
             expiration: option.expiration,
             strike: option.strike,
             price: option.price,
-            strategyType: OptionStrategyType.CALL_SPREAD, // TODO - use utils function to determine strategy type
+            strategyType: PositionStrategy.CALL_SPREAD, // TODO - use utils function to determine strategy type
             orderType: option.orderType
           }
         })
@@ -176,7 +172,7 @@ export async function getRecommendedStrategies(
 
 export async function getHedgingStrategy(
   ticker: Ticker,
-  strategyType: StrategyType,
+  strategyType: RecommendationStrategy,
   readableExpiration: string,
   lowerBound: number,
   upperBound: number | undefined = undefined,
@@ -217,7 +213,7 @@ export async function getHedgingStrategy(
             expiration: option.expiration,
             strike: option.strike,
             price: option.price,
-            strategyType: OptionStrategyType.CALL_SPREAD, // TO DO - use utils function to determine strategy type
+            strategyType: PositionStrategy.CALL_SPREAD, // TO DO - use utils function to determine strategy type
             orderType: option.orderType
           }
         })

@@ -35,11 +35,7 @@ import {
   IERC20Metadata,
   WrappedAsset
 } from '../../abis'
-import {
-  ContractType,
-  OptionStrategyType,
-  Ticker
-} from '../common/types/option'
+import { ContractType, PositionStrategy, Ticker } from '../common/types/option'
 import { UNSUPPORTED_VERSION_ERROR } from '../common/exceptions'
 import { getExpirationTimestamp } from '../common/utils/time'
 
@@ -319,8 +315,8 @@ export async function prepareDeliverOptionParams(
       if (optionOrderParams.orderType === OrderType.SHORT_OPEN) {
         let diffPrice: number = 0
         if (
-          optionOrderParams.strategyType == OptionStrategyType.CALL ||
-          optionOrderParams.strategyType == OptionStrategyType.PUT
+          optionOrderParams.strategyType == PositionStrategy.CALL ||
+          optionOrderParams.strategyType == PositionStrategy.PUT
         ) {
           // Single leg order
           diffPrice = Number(strikes[0])

@@ -1,6 +1,10 @@
 import { ethers } from 'ethers'
-import { Option, PositionInterface, Ticker } from '../../common/types/option'
-import { OrderType, StrategyType } from '../../amm/types'
+import {
+  PositionStrategy,
+  PositionInterface,
+  Ticker
+} from '../../common/types/option'
+import { OrderType } from '../../amm/types'
 import { NetworkVersion } from '../../common/types/web3'
 
 export interface OrderVerificationParams {
@@ -25,7 +29,7 @@ export interface VaultBuyOrderParametersArgs
   ticker: Ticker
   expiration: string
   strike: number[]
-  contractType: StrategyType
+  contractType: PositionStrategy
   orderType: OrderType
   thresholdPrice: number
   optionPrice: number

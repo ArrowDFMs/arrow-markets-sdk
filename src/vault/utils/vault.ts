@@ -3,9 +3,9 @@ import { ethers, Contract } from 'ethers'
 import {
   ContractType,
   Option,
-  OptionStrategyType,
+  PositionStrategy,
   OrderType,
-  StrategyTypeString,
+  PositionStrategyType,
   Strike,
   Ticker
 } from '../../common/types/option'
@@ -23,7 +23,7 @@ import {
   ArrowVaultEvents,
   VaultFundsManagerABI
 } from '../../../abis'
-import { StrategyType } from '../../amm/types'
+import { RecommendationStrategy } from '../../amm/types'
 import { NetworkVersion } from '../../common/types/web3'
 import {
   VaultEventAddresses,
@@ -272,7 +272,7 @@ export async function settleVaultOption(
  */
 export async function depositShortLiquidity(
   vaultAddress: string,
-  contractType: OptionStrategyType,
+  contractType: PositionStrategy,
   depositAmount: number,
   autoRollover: boolean,
   signer: ethers.Signer,
@@ -282,7 +282,7 @@ export async function depositShortLiquidity(
 
   const vaultInstance = new Contract(vaultAddress, ArrowVVEngine, signer)
 
-  if (contractType === OptionStrategyType.CALL) {
+  if (contractType === PositionStrategy.CALL) {
     const underlierDecimals = await vaultInstance.underlierDecimals()
     castedDepositAmount = ethers.utils.parseUnits(
       depositAmount.toString(),
@@ -495,7 +495,7 @@ export async function getVaultDetailsByAddress(
   strike: number[]
   expiration: number
   ticker: string
-  strategyType: OptionStrategyType
+  strategyType: PositionStrategy
 }> {
   try {
     const currentEpoch = await getCurrentEpoch(vaultAddress, network)
@@ -540,7 +540,7 @@ export async function getVaultDetailsByAddress(
       strike: parsedStrikes,
       expiration,
       ticker,
-      strategyType: OptionStrategyType.CALL_SPREAD // TO DO FIX HARD CODE
+      strategyType: PositionStrategy.CALL_SPREAD // TO DO FIX HARD CODE
     }
   } catch (error) {
     console.error('Error retrieving strikes:', error)
@@ -664,20 +664,20 @@ export async function getEpochData(args: GetEpochDataArgs): Promise<EpochData> {
 
 export function getContractTypeFromDB(
   contractType: string
-): OptionStrategyType | undefined {
+): PositionStrategy | undefined {
   switch (contractType) {
     case 'CALL':
-      return OptionStrategyType.CALL
+      return PositionStrategy.CALL
     case 'PUT':
-      return OptionStrategyType.PUT
+      return PositionStrategy.PUT
     case 'CALL_SPREAD':
-      return OptionStrategyType.CALL_SPREAD
+      return PositionStrategy.CALL_SPREAD
     case 'PUT_SPREAD':
-      return OptionStrategyType.PUT_SPREAD
+      return PositionStrategy.PUT_SPREAD
     case 'IRON_CONDOR':
-      return OptionStrategyType.IRON_CONDOR
+      return PositionStrategy.IRON_CONDOR
     case 'BUTTERFLY':
-      return OptionStrategyType.BUTTERFLY
+      return PositionStrategy.BUTTERFLY
     default:
       return undefined
   }
@@ -719,7 +719,7 @@ export async function getVaultsByTicker(
       })
 
       // DETERMINE STRATEGY TYPE AND SPLIT LEGS ACCORDINGLY
-      if (contractTypeFromDB === OptionStrategyType.CALL_SPREAD) {
+      if (contractTypeFromDB === PositionStrategy.CALL_SPREAD) {
         const largerStrike = Math.max(...strikes)
         const smallerStrike = Math.min(...strikes)
         // CALL CREDIT SPREAD  BUY > SELL
@@ -761,7 +761,7 @@ export async function getVaultsByTicker(
           )
 
           const longVault: Vault = {
-            strategyType: OptionStrategyType.CALL_SPREAD,
+            strategyType: PositionStrategy.CALL_SPREAD,
             orderType: OrderType.LONG_OPEN,
             optionLegs: longSideVaultLegs,
             address: vault.address,
@@ -809,7 +809,7 @@ export async function getVaultsByTicker(
           )
 
           const shortVault: Vault = {
-            strategyType: OptionStrategyType.CALL_SPREAD,
+            strategyType: PositionStrategy.CALL_SPREAD,
             orderType: OrderType.SHORT_OPEN,
             optionLegs: shortSideVaultLegs,
             address: vault.address,
@@ -822,13 +822,13 @@ export async function getVaultsByTicker(
 
           return shortVault
         }
-      } else if (contractTypeFromDB === OptionStrategyType.PUT_SPREAD) {
+      } else if (contractTypeFromDB === PositionStrategy.PUT_SPREAD) {
         const largerStrike = Math.max(...strikes)
         const smallerStrike = Math.min(...strikes)
         // PUT DEBIT SPREAD BUY > SELL
         // PUT CREDIT SPREAD BUY < SELL
         // TO DO FINISH THIS LOGIC
-      } else if (contractTypeFromDB === OptionStrategyType.IRON_CONDOR) {
+      } else if (contractTypeFromDB === PositionStrategy.IRON_CONDOR) {
         const leg1Strike = strikes[0]
         const leg2Strike = strikes[1]
         const leg3Strike = strikes[2]
@@ -893,7 +893,7 @@ export async function getVaultsByTicker(
           )
 
           const longVault: Vault = {
-            strategyType: OptionStrategyType.IRON_CONDOR,
+            strategyType: PositionStrategy.IRON_CONDOR,
             optionLegs: longSideVaultLegs,
             address: vault.address,
             price: vaultPrice.total_position_price,
@@ -964,7 +964,7 @@ export async function getVaultsByTicker(
           )
 
           const shortVault: Vault = {
-            strategyType: OptionStrategyType.IRON_CONDOR,
+            strategyType: PositionStrategy.IRON_CONDOR,
             optionLegs: shortSideVaultLegs,
             address: vault.address,
             price: vaultPrice.total_position_price,
@@ -977,7 +977,7 @@ export async function getVaultsByTicker(
 
           return shortVault
         }
-      } else if (contractTypeFromDB === OptionStrategyType.BUTTERFLY) {
+      } else if (contractTypeFromDB === PositionStrategy.BUTTERFLY) {
         const leg1Strike = strikes[0]
         const leg2Strike = strikes[1]
         const leg3Strike = strikes[2]
@@ -1029,7 +1029,7 @@ export async function getVaultsByTicker(
           )
 
           const longVault: Vault = {
-            strategyType: OptionStrategyType.BUTTERFLY,
+            strategyType: PositionStrategy.BUTTERFLY,
             optionLegs: longSideVaultLegs,
             address: vault.address,
             price: vaultPrice.total_position_price,
@@ -1089,7 +1089,7 @@ export async function getVaultsByTicker(
           )
 
           const shortVault: Vault = {
-            strategyType: OptionStrategyType.BUTTERFLY,
+            strategyType: PositionStrategy.BUTTERFLY,
             optionLegs: shortSideVaultLegs,
             address: vault.address,
             price: vaultPrice.total_position_price,
@@ -1148,7 +1148,7 @@ export function getVaultEventsContract(
  */
 export async function calculateExpectedPremium(
   ticker: Ticker,
-  optionType: OptionStrategyType,
+  optionType: PositionStrategy,
   collateral: number,
   optionPrice: number,
   strike: number[]
@@ -1170,17 +1170,17 @@ export async function calculateExpectedPremium(
  * @returns The maximum number of option contracts that can be sold as a whole number.
  */
 export function calculateMaxContracts(
-  strategyType: OptionStrategyType,
+  strategyType: PositionStrategy,
   strike: number[],
   collateral: number
 ): number {
   let maxLoss: number
   // Higher strike / Spread * Collateral = Max Contracts
-  if (strategyType === OptionStrategyType.CALL) {
+  if (strategyType === PositionStrategy.CALL) {
     maxLoss = 1
-  } else if (strategyType === OptionStrategyType.PUT) {
+  } else if (strategyType === PositionStrategy.PUT) {
     maxLoss = strike[0]
-  } else if (strategyType === OptionStrategyType.PUT_SPREAD) {
+  } else if (strategyType === PositionStrategy.PUT_SPREAD) {
     if (!Array.isArray(strike) || strike.length !== 2) {
       throw new Error('Strike must be an array of two numbers.')
     }
@@ -1188,7 +1188,7 @@ export function calculateMaxContracts(
     const largerStrike = Math.max(...strike)
     const smallerStrike = Math.min(...strike)
     maxLoss = largerStrike - smallerStrike
-  } else if (strategyType === OptionStrategyType.CALL_SPREAD) {
+  } else if (strategyType === PositionStrategy.CALL_SPREAD) {
     if (!Array.isArray(strike) || strike.length !== 2) {
       throw new Error('Strike must be an array of two numbers.')
     }
@@ -1404,7 +1404,7 @@ export async function getEarnedPremium(
 
 export async function getHistoricalReturn(
   vaultAddress: string,
-  strategyType: StrategyType,
+  strategyType: RecommendationStrategy,
   network: NetworkVersion
 ) {
   const currentEpoch = await getCurrentEpoch(vaultAddress, network)
@@ -1452,7 +1452,7 @@ export async function getHistoricalReturn(
 
 export function getSpreadStrikes(
   strikes: number[],
-  strategyType: OptionStrategyType,
+  strategyType: PositionStrategy,
   orderType: OrderType
 ) {
   const sortedStrikes = strikes.sort((a, b) => a - b)
@@ -1464,7 +1464,7 @@ export function getSpreadStrikes(
 
   const createLeg = (
     strike: number,
-    type: OptionStrategyType,
+    type: PositionStrategy,
     orderType: OrderType
   ) => ({
     strike,
@@ -1474,7 +1474,7 @@ export function getSpreadStrikes(
 
   // TO DO USE THE ORDER TYPE TO DETERMINE IF LONG/SHORT
   switch (strategyType) {
-    case OptionStrategyType.CALL_SPREAD:
+    case PositionStrategy.CALL_SPREAD:
       // SHORT CALL SPREAD
       if (orderType === OrderType.SHORT_OPEN || OrderType.SHORT_CLOSE) {
         validateLength(2)
@@ -1482,12 +1482,12 @@ export function getSpreadStrikes(
         return [
           createLeg(
             sortedStrikes[1],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.LONG_OPEN
           ), // LONG LEG
           createLeg(
             sortedStrikes[0],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.SHORT_OPEN
           ) // SHORT LEG
         ]
@@ -1497,30 +1497,30 @@ export function getSpreadStrikes(
         return [
           createLeg(
             sortedStrikes[0],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.LONG_OPEN
           ), // LONG LEG
           createLeg(
             sortedStrikes[1],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.SHORT_OPEN
           ) // SHORT LEG
         ]
       }
 
-    case OptionStrategyType.PUT_SPREAD:
+    case PositionStrategy.PUT_SPREAD:
       if (orderType === OrderType.LONG_OPEN || OrderType.LONG_CLOSE) {
         validateLength(2)
 
         return [
           createLeg(
             sortedStrikes[1],
-            OptionStrategyType.PUT,
+            PositionStrategy.PUT,
             OrderType.LONG_OPEN
           ), // LONG LEG
           createLeg(
             sortedStrikes[0],
-            OptionStrategyType.PUT,
+            PositionStrategy.PUT,
             OrderType.SHORT_OPEN
           ) // SHORT LEG
         ]
@@ -1530,40 +1530,40 @@ export function getSpreadStrikes(
         return [
           createLeg(
             sortedStrikes[0],
-            OptionStrategyType.PUT,
+            PositionStrategy.PUT,
             OrderType.LONG_OPEN
           ), // LONG lEG
           createLeg(
             sortedStrikes[1],
-            OptionStrategyType.PUT,
+            PositionStrategy.PUT,
             OrderType.SHORT_OPEN
           ) // SHORT LEG
         ]
       }
 
-    case OptionStrategyType.IRON_CONDOR:
+    case PositionStrategy.IRON_CONDOR:
       if (orderType === OrderType.LONG_OPEN || OrderType.LONG_CLOSE) {
         validateLength(4)
 
         return [
           createLeg(
             sortedStrikes[0],
-            OptionStrategyType.PUT,
+            PositionStrategy.PUT,
             OrderType.SHORT_OPEN
           ), // SHORT PUT
           createLeg(
             sortedStrikes[1],
-            OptionStrategyType.PUT,
+            PositionStrategy.PUT,
             OrderType.LONG_OPEN
           ), // LONG PUT
           createLeg(
             sortedStrikes[2],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.LONG_OPEN
           ), // LONG CALL
           createLeg(
             sortedStrikes[3],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.SHORT_OPEN
           ) // SHORT CALL
         ]
@@ -1573,45 +1573,45 @@ export function getSpreadStrikes(
         return [
           createLeg(
             sortedStrikes[0],
-            OptionStrategyType.PUT,
+            PositionStrategy.PUT,
             OrderType.LONG_OPEN
           ), // LONG PUT
           createLeg(
             sortedStrikes[1],
-            OptionStrategyType.PUT,
+            PositionStrategy.PUT,
             OrderType.SHORT_OPEN
           ), // SHORT PUT
           createLeg(
             sortedStrikes[2],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.SHORT_OPEN
           ), // SHORT CALL
           createLeg(
             sortedStrikes[3],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.LONG_OPEN
           ) // LONG CALL
         ]
       }
 
-    case OptionStrategyType.BUTTERFLY:
+    case PositionStrategy.BUTTERFLY:
       if (orderType === OrderType.LONG_CLOSE || OrderType.LONG_OPEN) {
         validateLength(3)
 
         return [
           createLeg(
             sortedStrikes[0],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.LONG_OPEN
           ), // LONG CAL
           createLeg(
             sortedStrikes[1],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.SHORT_OPEN
           ), // SHORT CALL
           createLeg(
             sortedStrikes[2],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.LONG_OPEN
           ) // LONG CALL
         ]
@@ -1621,17 +1621,17 @@ export function getSpreadStrikes(
         return [
           createLeg(
             sortedStrikes[0],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.SHORT_OPEN
           ), // SHORT CALL
           createLeg(
             sortedStrikes[1],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.LONG_OPEN
           ), // LONG CALL
           createLeg(
             sortedStrikes[2],
-            OptionStrategyType.CALL,
+            PositionStrategy.CALL,
             OrderType.SHORT_OPEN
           ) // SHORT CALL
         ]
@@ -1643,36 +1643,36 @@ export function getSpreadStrikes(
 }
 
 export function convertVaultStrategyTypeToString(
-  strategyType: OptionStrategyType,
+  strategyType: PositionStrategy,
   orderType: OrderType
-): StrategyTypeString {
+): PositionStrategyType {
   switch (strategyType) {
-    case OptionStrategyType.CALL:
+    case PositionStrategy.CALL:
       return orderType === OrderType.LONG_OPEN ||
         orderType === OrderType.LONG_CLOSE
         ? 'Long Call'
         : 'Short Call'
-    case OptionStrategyType.PUT:
+    case PositionStrategy.PUT:
       return orderType === OrderType.LONG_OPEN ||
         orderType === OrderType.LONG_CLOSE
         ? 'Long Put'
         : 'Short Put'
-    case OptionStrategyType.CALL_SPREAD:
+    case PositionStrategy.CALL_SPREAD:
       return orderType === OrderType.LONG_OPEN ||
         orderType === OrderType.LONG_CLOSE
         ? 'Call Debit Spread'
         : 'Call Credit Spread'
-    case OptionStrategyType.PUT_SPREAD:
+    case PositionStrategy.PUT_SPREAD:
       return orderType === OrderType.LONG_OPEN ||
         orderType === OrderType.LONG_CLOSE
         ? 'Put Debit Spread'
         : 'Put Credit Spread'
-    case OptionStrategyType.IRON_CONDOR:
+    case PositionStrategy.IRON_CONDOR:
       return orderType === OrderType.LONG_OPEN ||
         orderType === OrderType.LONG_CLOSE
         ? 'Long Iron Condor'
         : 'Short Iron Condor'
-    case OptionStrategyType.BUTTERFLY:
+    case PositionStrategy.BUTTERFLY:
       return orderType === OrderType.LONG_OPEN ||
         orderType === OrderType.LONG_CLOSE
         ? 'Long Butterfly'

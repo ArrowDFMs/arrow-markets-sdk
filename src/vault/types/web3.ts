@@ -1,7 +1,7 @@
 import { ethers, providers } from 'ethers'
 import { NetworkVersion } from '../../common/types/web3'
 import { Ticker } from '../../common/types/option'
-import { StrategyType } from '../../amm/types'
+import { RecommendationStrategy } from '../../amm/types'
 
 export interface SmartContractFunctionOptions {
   address: string
@@ -14,7 +14,7 @@ export interface SmartContractFunctionOptions {
 
 export interface SmartContractInfo {
   ticker: Ticker
-  strategyType: StrategyType
+  strategyType: RecommendationStrategy
   strike?: number[]
   epoch?: number
   contractsRemaining: number

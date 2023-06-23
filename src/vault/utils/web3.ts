@@ -6,7 +6,7 @@ import {
   WrappedAssets
 } from '../constants/vault'
 import { NetworkVersion } from '../../common/types/web3'
-import { OptionStrategyType, Ticker } from '../../common/types/option'
+import { PositionStrategy, Ticker } from '../../common/types/option'
 import { getVaultDetailsByAddress } from './vault'
 import { IERC20Metadata } from '../../../abis'
 
@@ -81,7 +81,7 @@ export async function callSmartContractFunction(
  */
 export async function checkBalanceAndAllowance(
   vaultAddress: string,
-  strategyType: OptionStrategyType,
+  strategyType: PositionStrategy,
   amount: number,
   signer: ethers.Signer,
   network: NetworkVersion
@@ -111,7 +111,7 @@ export async function checkBalanceAndAllowance(
     */
   const vaultDetails = await getVaultDetailsByAddress(vaultAddress, network)
 
-  if (strategyType === OptionStrategyType.CALL) {
+  if (strategyType === PositionStrategy.CALL) {
     if (vaultDetails.ticker === Ticker.ETH) {
       tokenAddress = WrappedAssets[network]['ETH']
       decimals = 18 // TODO: We have to check to make sure this is valid on mainnet
