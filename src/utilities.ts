@@ -22,9 +22,12 @@ import {
   IERC20Metadata,
   WrappedAsset
 } from '../abis'
-import { OrderType, Ticker } from '@arrow/arrow-common-sdk/lib/types/option'
+import {
+  OrderType,
+  Ticker
+} from '@arrow-markets/arrow-common-sdk/lib/types/option'
 import { OptionOrderParams, Version } from './types'
-import { getExpirationTimestamp } from '@arrow/arrow-common-sdk/lib/utils/time'
+import { getExpirationTimestamp } from '@arrow-markets/arrow-common-sdk/lib/utils/time'
 
 /***************************************
  *      CONTRACT GETTER FUNCTIONS      *

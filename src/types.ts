@@ -8,7 +8,7 @@ import {
   Currency,
   Interval,
   OrderType
-} from '@arrow/arrow-common-sdk/lib/types/option'
+} from '@arrow-markets/arrow-common-sdk/lib/types/option'
 import { ethers } from 'ethers'
 
 /**********************************
