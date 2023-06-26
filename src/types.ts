@@ -2,20 +2,20 @@
  *          IMPORTS          *
  *****************************/
 
-import { Greeks, Option, Position } from '@arrow-markets/arrow-common-sdk'
+import { Greeks, Option, Position } from "@arrow-markets/arrow-common-sdk"
 import {
   ContractType,
   OrderType
-} from '@arrow-markets/arrow-common-sdk/lib/types/option'
-import { ethers } from 'ethers'
+} from "@arrow-markets/arrow-common-sdk/lib/types/option"
+import { ethers } from "ethers"
 
 /**********************************
  *          USEFUL TYPES          *
  **********************************/
 
 export enum Version {
-  V4 = 'v4',
-  COMPETITION = 'competition'
+  V4 = "v4",
+  COMPETITION = "competition"
 }
 
 export enum RecommendationStrategyType {
@@ -32,11 +32,11 @@ export enum ProtectionType {
 }
 
 export enum TradingView {
-  ADVANCED = 'advanced',
-  TARGET = 'target',
-  SUPPORT = 'support',
-  HEDGE = 'hedge',
-  PORTFOLIO = 'portfolio'
+  ADVANCED = "advanced",
+  TARGET = "target",
+  SUPPORT = "support",
+  HEDGE = "hedge",
+  PORTFOLIO = "portfolio"
 }
 
 /**************************************

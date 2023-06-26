@@ -2,7 +2,7 @@
  *          IMPORTS          *
  *****************************/
 
-import { Contract, ethers } from 'ethers'
+import { Contract, ethers } from "ethers"
 
 // Constants
 import {
@@ -12,7 +12,7 @@ import {
   providers,
   quantityScaleFactor,
   UNSUPPORTED_VERSION_ERROR
-} from './constants'
+} from "./constants"
 
 // ABIs
 import {
@@ -21,13 +21,13 @@ import {
   IArrowRouter,
   IERC20Metadata,
   WrappedAsset
-} from '../abis'
+} from "../abis"
 import {
   OrderType,
   Ticker
-} from '@arrow-markets/arrow-common-sdk/lib/types/option'
-import { OptionOrderParams, Version } from './types'
-import { getExpirationTimestamp } from '@arrow-markets/arrow-common-sdk/lib/utils/time'
+} from "@arrow-markets/arrow-common-sdk/lib/types/option"
+import { OptionOrderParams, Version } from "./types"
+import { getExpirationTimestamp } from "@arrow-markets/arrow-common-sdk/lib/utils/time"
 
 /***************************************
  *      CONTRACT GETTER FUNCTIONS      *
@@ -195,7 +195,7 @@ export async function computeOptionChainAddress(
   // Build salt for CREATE2
 
   const salt = ethers.utils.solidityKeccak256(
-    ['address', 'string', 'uint256'],
+    ["address", "string", "uint256"],
     [optionChainFactoryAddress, ticker, readableExpiration]
   )
 
@@ -235,7 +235,7 @@ export async function computeShortAggregatorAddress(
   // Build salt for
 
   const salt = ethers.utils.solidityKeccak256(
-    ['address', 'string'],
+    ["address", "string"],
     [shortAggregatorFactoryAddress, ticker]
   )
 
@@ -271,7 +271,7 @@ export async function prepareDeliverOptionParams(
         optionOrderParams.payPremium === undefined
       ) {
         throw new Error(
-          '`payPremium` boolean parameter must be set for closing a short position'
+          "`payPremium` boolean parameter must be set for closing a short position"
         )
       }
 
@@ -294,20 +294,20 @@ export async function prepareDeliverOptionParams(
       const bigNumberStrike = strikes.map(strike =>
         ethers.utils.parseUnits(strike, stablecoinDecimals)
       )
-      const formattedStrike = strikes.join('|')
+      const formattedStrike = strikes.join("|")
       const intQuantity = optionOrderParams.ratio! * quantityScaleFactor
 
       // Hash and sign the option order parameters for on-chain verification
       const hashedValues = ethers.utils.solidityKeccak256(
         [
-          'string', // ticker - String to indicate a particular asset ("AVAX", "ETH", or "BTC").
-          'uint256', // expiration - Date in Unix timestamp. Must be 8:00 AM UTC (e.g. 1643097600 for January 25th, 2022).
-          'uint256', // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
-          'uint256[2]', // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
-          'string', // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
-          'uint256', // contractType - 0 for call, 1 for put, 2 for call spread, 3 for put spread, 4 for butterfly, and 5 for iron condor.
-          'uint256', // quantity - Integer number of contracts desired in the order. Has to be scaled by supported decimals (10**2).
-          'uint256' // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
+          "string", // ticker - String to indicate a particular asset ("AVAX", "ETH", or "BTC").
+          "uint256", // expiration - Date in Unix timestamp. Must be 8:00 AM UTC (e.g. 1643097600 for January 25th, 2022).
+          "uint256", // readableExpiration - Date in "MMDDYYYY" format (e.g. "01252022" for January 25th, 2022).
+          "uint256[2]", // strike - Ethers BigNumber versions of the strikes in terms of the stablecoin's decimals (e.g. [ethers.utils.parseUnits(strike, await usdc_e.decimals()), ethers.BigNumber.from(0)]).
+          "string", // decimalStrike - String version of the strike that includes the decimal places (e.g. "12.25").
+          "uint256", // contractType - 0 for call, 1 for put, 2 for call spread, 3 for put spread, 4 for butterfly, and 5 for iron condor.
+          "uint256", // quantity - Integer number of contracts desired in the order. Has to be scaled by supported decimals (10**2).
+          "uint256" // thresholdPrice - Indication of the price the user is willing to pay (e.g. ethers.utils.parseUnits(priceWillingToPay, await usdc_e.decimals()).toString()).
         ],
         [
           optionOrderParams.ticker,

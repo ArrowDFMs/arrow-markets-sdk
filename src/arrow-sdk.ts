@@ -3,8 +3,8 @@
  *****************************/
 
 // Packages
-import axios from 'axios'
-import { ethers } from 'ethers'
+import axios from "axios"
+import { ethers } from "ethers"
 
 // Types
 import {
@@ -15,7 +15,7 @@ import {
   StrikeGridOption,
   TradingView,
   Version
-} from './types'
+} from "./types"
 
 // Constants
 import {
@@ -24,7 +24,7 @@ import {
   providers,
   UNSUPPORTED_VERSION_ERROR,
   urls
-} from './constants'
+} from "./constants"
 
 // Helpers
 import {
@@ -37,24 +37,24 @@ import {
   getStablecoinContract,
   isValidVersion,
   prepareDeliverOptionParams
-} from './utilities'
+} from "./utilities"
 import {
   getUnderlierMarketChart,
   getUnderlierSpotPrice
-} from '@arrow-markets/arrow-common-sdk/lib/utils/pricing'
+} from "@arrow-markets/arrow-common-sdk/lib/utils/pricing"
 import {
   ContractType,
   OrderType,
   PositionStrategy,
   Ticker
-} from '@arrow-markets/arrow-common-sdk/lib/types/option'
-import { Position } from '@arrow-markets/arrow-common-sdk'
-import { getExpirationTimestamp } from '@arrow-markets/arrow-common-sdk/lib/utils/time'
+} from "@arrow-markets/arrow-common-sdk/lib/types/option"
+import { Position } from "@arrow-markets/arrow-common-sdk"
+import { getExpirationTimestamp } from "@arrow-markets/arrow-common-sdk/lib/utils/time"
 import {
   convertToGeneralPositionType,
   determinePositionStrategyType,
   getOrderTypeFromPositionType
-} from '@arrow-markets/arrow-common-sdk/lib/utils/parsing'
+} from "@arrow-markets/arrow-common-sdk/lib/utils/parsing"
 
 /***************************************
  *           ARROW API CALLS           *
@@ -87,7 +87,7 @@ export async function estimateGasPrice(
   })
 
   const estimateGasPriceResponse: any = await axios.post(
-    urls.api[version] + '/estimate-gas',
+    urls.api[version] + "/estimate-gas",
     {
       params: params
     }
@@ -135,7 +135,7 @@ export async function getRecommendedStrategies(
   try {
     const recommendedOptionResponse =
       await axios.post<GetRecommendedStrategiesResponse>(
-        urls.api[version] + '/get-recommended-option',
+        urls.api[version] + "/get-recommended-option",
         {
           ticker: ticker,
           strategy_type: strategyType,
@@ -217,7 +217,7 @@ export async function getHedgingStrategy(
   try {
     const recommendedOptionResponse =
       await axios.post<GetRecommendedStrategiesResponse>(
-        urls.api[version] + '/get-recommended-option',
+        urls.api[version] + "/get-recommended-option",
         {
           ticker: ticker,
           strategy_type: strategyType,
@@ -294,7 +294,7 @@ export async function getStrikeGrid(
   if (!isValidVersion(version)) throw UNSUPPORTED_VERSION_ERROR
 
   const strikeGridResponse = await axios.post(
-    urls.api[version] + '/get-strike-grid',
+    urls.api[version] + "/get-strike-grid",
     {
       order_type: orderType,
       ticker: ticker,
@@ -360,8 +360,8 @@ export async function submitLongOptionOrder(
 
   const apiEndPoint =
     deliverOptionParams[0].orderType === OrderType.LONG_OPEN
-      ? '/open-long-position'
-      : '/close-long-position'
+      ? "/open-long-position"
+      : "/close-long-position"
   const orderSubmissionResponse = await axios.post(
     urls.api[version] + apiEndPoint,
     {
@@ -407,8 +407,8 @@ export async function submitShortOptionOrder(
 
   const orderEndpoint =
     deliverOptionParams[0].orderType === 2
-      ? '/open-short-position'
-      : '/close-short-position'
+      ? "/open-short-position"
+      : "/close-short-position"
   const orderSubmissionResponse = await axios.post(
     urls.api[version] + orderEndpoint,
     {
@@ -444,7 +444,7 @@ export async function settleOptions(
   try {
     await router.callStatic.settleOptions(owner, ticker, readableExpiration)
   } catch (err) {
-    throw new Error('Settlement call would fail on chain.')
+    throw new Error("Settlement call would fail on chain.")
   }
 
   // Send function call on-chain after `callStatic` success
