@@ -4,10 +4,11 @@
 
 // Packages
 import { ethers } from "ethers"
-import { Ticker, Version } from "./types"
 
 // Builds
 import { ArrowOptionChainProxy } from "../build"
+import { Version } from "./types"
+import { Ticker } from "@arrow/arrow-common-sdk/lib/types/option"
 
 /*******************************
  *          CONSTANTS          *
