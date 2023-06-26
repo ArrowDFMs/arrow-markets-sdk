@@ -2,11 +2,9 @@
  *          IMPORTS          *
  *****************************/
 
-import { Greeks, Option, Position } from '@arrow/arrow-common-sdk'
+import { Greeks, Option, Position } from '@arrow-markets/arrow-common-sdk'
 import {
   ContractType,
-  Currency,
-  Interval,
   OrderType
 } from '@arrow-markets/arrow-common-sdk/lib/types/option'
 import { ethers } from 'ethers'

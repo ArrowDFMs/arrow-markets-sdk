@@ -48,11 +48,8 @@ import {
   PositionStrategy,
   Ticker
 } from '@arrow-markets/arrow-common-sdk/lib/types/option'
-import { Option, Position } from '@arrow/arrow-common-sdk'
-import {
-  getExpirationTimestamp,
-  getReadableTimestamp
-} from '@arrow-markets/arrow-common-sdk/lib/utils/time'
+import { Option, Position } from '@arrow-markets/arrow-common-sdk'
+import { getExpirationTimestamp } from '@arrow-markets/arrow-common-sdk/lib/utils/time'
 import {
   convertToGeneralPositionType,
   determinePositionStrategyType,
