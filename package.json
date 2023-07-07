@@ -1,6 +1,6 @@
 {
-    "name": "@arrow-markets/arrow-sdk",
-    "version": "1.4.4",
+    "name": "@arrow-markets/arrow-amm-sdk",
+    "version": "1.5.0",
     "description": "This SDK is meant to make it easier for developers to connect to the Arrow API.",
     "main": "lib/src/arrow-sdk.js",
     "types": "lib/src/arrow-sdk.d.ts",
@@ -28,8 +28,7 @@
     },
     "homepage": "https://github.com/ArrowDFMs/arrow-markets-sdk#readme",
     "dependencies": {
-        "@arrow-markets/arrow-common-sdk": "git+https://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@github.com/ArrowDFMs/arrow-common-sdk.git",
-        "axios": "0.24.0",
+        "@arrow-markets/arrow-common-sdk": "git+https://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@github.com/ArrowDFMs/arrow-common-sdk.git#main""axios": "0.24.0",
         "cordova-plugin-geolocation": "^4.1.0",
         "dayjs": "^1.11.6",
         "dotenv": "10.0.0",
@@ -37,7 +36,7 @@
     },
     "devDependencies": {
         "@types/jest": "29.0.3",
-        "@types/node": "18.7.18",
+        "@types/node": "^18.16.3",
         "jest": "29.0.3",
         "ts-jest": "29.0.2",
         "ts-node": "10.9.1",
