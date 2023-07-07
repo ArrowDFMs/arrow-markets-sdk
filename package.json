@@ -28,7 +28,7 @@
     },
     "homepage": "https://github.com/ArrowDFMs/arrow-markets-sdk#readme",
     "dependencies": {
-        "@arrow-markets/arrow-common-sdk": "git+https://tenax002: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@github.com/ArrowDFMs/arrow-common-sdk.git",
+        "@arrow-markets/arrow-common-sdk": "git+https://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@github.com/ArrowDFMs/arrow-common-sdk.git",
         "cordova-plugin-geolocation": "^4.1.0",
         "dayjs": "^1.11.6",
         "dotenv": "10.0.0",
